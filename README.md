@@ -4,6 +4,8 @@ Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduct
 
 ## Setup
 
+Navigate to directory `/web`
+
 Make sure to install dependencies:
 
 ```bash
@@ -16,7 +18,7 @@ pnpm install
 # yarn
 yarn install
 
-# bun
+# bund:\Vible\vible-online-teaching-platform\.agents
 bun install
 ```
 
