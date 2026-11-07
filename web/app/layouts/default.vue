@@ -19,10 +19,12 @@
       <UMain class="flex">
          <Sidebar v-model:open="open" />
 
-         <slot />
+         <div class="min-w-0 flex-1">
+            <slot />
+         </div>
       </UMain>
 
-      <UFooter />
+      <!-- <UFooter /> -->
    </div>
 </template>
 
