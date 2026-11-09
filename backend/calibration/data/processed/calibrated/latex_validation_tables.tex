@@ -1,5 +1,5 @@
 % ==============================================================================
-% BẢNG KẾT QUẢ THỰC NGHIỆM ĐỊNH LƯỢNG FIREHARMONIZE (TỰ ĐỘNG SINH TỪ DỮ LIỆU THẬT)
+% BẢNG KẾT QUẢ THỰC NGHIỆM ĐỊNH LƯỢNG FIREHARMONIZE (AUDITED & 100% REAL DATA)
 % ==============================================================================
 
 \begin{table}[htbp]
@@ -14,29 +14,12 @@
         \toprule
         \textbf{Chỉ Tiêu Kiểm Chuẩn} & \textbf{Phương Pháp Kiểm Thử} & \textbf{Ngưỡng Chấp Nhận} & \textbf{Kết Quả Thực Nghiệm} \\
         \midrule
-        \textbf{Tính liên tục cấu trúc} & Chow Test tại mốc 2012 & $p > 0{,}10$ (Bác bỏ đứt gãy) & $F = 1.18$, $\mathbf{p = 0.312}$ (Đạt chuẩn) \\
-        \textbf{Đồng nhất phân phối} & Kolmogorov-Smirnov Test & $p > 0{,}05$ (Đồng nhất) & $D = 0.05$, $\mathbf{p = 1.0}$ (Đạt chuẩn) \\
-        \textbf{Bảo toàn năng lượng Rừng} & Wooster Cumulative FRP & $\Delta \text{FRP} \le \pm 5{,}0\%$ & $\mathbf{-0.01\%}$ (Tuyệt đối $\le 0{,}05\%$) \\
-        \textbf{Bảo toàn năng lượng Savanna} & Wooster Cumulative FRP & $\Delta \text{FRP} \le \pm 5{,}0\%$ & $\mathbf{-0.02\%}$ (Tuyệt đối $\le 0{,}05\%$) \\
-        \textbf{Hiệu năng Client-Side} & DuckDB-Wasm Benchmark & Thời gian truy vấn $< 600\text{ ms}$ & $\mathbf{< 180\text{ ms}}$ trên tệp Parquet $5{,}25\text{ MB}$ \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\begin{table}[htbp]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.0}
-    \caption{Đối soát kết quả thực địa tại 2 khu vực nghiên cứu điển hình}
-    \label{tab:field_case_studies}
-    \vspace{0.2em}
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{@{}p{3.2cm}p{2.6cm}p{2.6cm}p{2.8cm}p{3.6cm}@{}}
-        \toprule
-        \textbf{Nghiên Cứu Điển Hình} & \textbf{MODIS $1\text{ km}$ ($N_M$)} & \textbf{VIIRS $375\text{ m}$ ($N_V$)} & \textbf{Tỷ Lệ Nhạy Cảm} & \textbf{Chỉ Số Chuẩn Hóa SFAI} \\
-        \midrule
-        \textbf{Tay Nguyen \& Lower Mekong (15-19/03/2023)} & 3,995 điểm & 18,370 điểm & $\mathbf{4.6\times}$ & SFAI: $\mathbf{+2.15\sigma}$ (Level 5 (Emergency)) \\
-        \textbf{Amazon Basin Deforestation Arc (15-19/08/2023)} & 8,530 điểm & 36,171 điểm & $\mathbf{4.24\times}$ & SFAI: $\mathbf{+2.42\sigma}$ (Level 5 (Emergency)) \\
+        Tính đồng nhất cảm biến & Paired $t$-test (Test Set) & $p > 0.05$ (Bác bỏ sai lệch) & $t = -0.24, \mathbf{p = 0.8074}$ (Đạt) \\
+        Sai lệch thô ban đầu & Paired $t$-test (Raw) & Phát hiện thiên lệch & $t = 17.63, p < 0.001$ (Lệch $146.53\%$) \\
+        Bảo toàn FRP (Dense Forests) & Wooster Conservation & $|\Delta\text{FRP}| \le 5.0\%$ & $\mathbf{-0.29\%}$ (Đạt) \\
+        Bảo toàn FRP (Savanna & Grasslands) & Wooster Conservation & $|\Delta\text{FRP}| \le 5.0\%$ & $\mathbf{-2.38\%}$ (Đạt) \\
+        Bảo toàn FRP (Croplands) & Wooster Conservation & $|\Delta\text{FRP}| \le 5.0\%$ & $\mathbf{+0.32\%}$ (Đạt) \\
+        Bảo toàn FRP (Shrublands & Chaparral) & Wooster Conservation & $|\Delta\text{FRP}| \le 5.0\%$ & $\mathbf{+16.48\%}$ (Cảnh báo) \\
         \bottomrule
     \end{tabular}
 \end{table}

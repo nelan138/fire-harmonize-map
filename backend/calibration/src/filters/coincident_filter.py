@@ -109,40 +109,58 @@ def extract_coincident_pairs(
         tree_modis = cKDTree(m_xyz)
         chord_radius = 2.0 * np.sin(max_dist_m / (2.0 * EARTH_RADIUS_METERS))
         dists, nearest_m_indices = tree_modis.query(v_xyz, distance_upper_bound=chord_radius)
+        v_time_arr = v_day["time_min"].values
+        m_time_arr = m_day["time_min"].values
+        v_frp_arr = v_day["frp"].values
+        v_lat_arr = v_day["latitude"].values
+        v_lon_arr = v_day["longitude"].values
+
+        m_lat_arr = m_day["latitude"].values
+        m_lon_arr = m_day["longitude"].values
+        m_frp_arr = m_day["frp"].values
+        m_time_raw_arr = m_day["acq_time"].values
+        m_conf_arr = m_day["confidence"].values
+        m_biome_arr = m_day["biome_id"].values if "biome_id" in m_day.columns else np.ones(len(m_day), dtype=int)
+        m_reg_arr = m_day["region_id"].values if "region_id" in m_day.columns else np.array(["UNKNOWN"] * len(m_day))
+
+        # Vectorized spatial and temporal filtering
+        valid_mask = (dists <= chord_radius) & (nearest_m_indices < len(m_day))
+        valid_v_idx = np.where(valid_mask)[0]
+        valid_m_idx = nearest_m_indices[valid_mask]
+
+        dt_arr = np.abs(v_time_arr[valid_v_idx] - m_time_arr[valid_m_idx])
+        time_mask = dt_arr <= max_time_diff_min
+        
+        final_v_idx = valid_v_idx[time_mask]
+        final_m_idx = valid_m_idx[time_mask]
 
         assigned_clusters = {}
-        for v_idx, (dist, m_idx) in enumerate(zip(dists, nearest_m_indices)):
-            if dist <= chord_radius and m_idx < len(m_day):
-                # Check acquisition time difference
-                dt = abs(v_day.loc[v_idx, "time_min"] - m_day.loc[m_idx, "time_min"])
-                if dt <= max_time_diff_min:
-                    assigned_clusters.setdefault(m_idx, []).append(v_idx)
+        for v_i, m_i in zip(final_v_idx, final_m_idx):
+            assigned_clusters.setdefault(m_i, []).append(v_i)
 
         for m_idx, v_indices in assigned_clusters.items():
-            v_sub = v_day.loc[v_indices]
-            m_pt = m_day.loc[m_idx]
-            
-            total_viirs_frp = float(v_sub["frp"].sum())
-            viirs_count = int(len(v_indices))
+            v_indices_arr = np.array(v_indices, dtype=int)
+            total_viirs_frp = float(np.sum(v_frp_arr[v_indices_arr]))
+            viirs_count = len(v_indices)
             total_assigned_viirs += viirs_count
+            m_frp_val = float(m_frp_arr[m_idx])
 
             matched_pairs.append({
                 "acq_date": str(date),
-                "modis_lat": float(m_pt["latitude"]),
-                "modis_lon": float(m_pt["longitude"]),
-                "modis_time": int(m_pt["acq_time"]),
-                "modis_frp": float(m_pt["frp"]),
-                "modis_confidence": str(m_pt["confidence"]),
+                "modis_lat": float(m_lat_arr[m_idx]),
+                "modis_lon": float(m_lon_arr[m_idx]),
+                "modis_time": int(m_time_raw_arr[m_idx]),
+                "modis_frp": m_frp_val,
+                "modis_confidence": str(m_conf_arr[m_idx]),
                 "viirs_count": viirs_count,
                 "viirs_frp_sum": total_viirs_frp,
-                "viirs_mean_lat": float(v_sub["latitude"].mean()),
-                "viirs_mean_lon": float(v_sub["longitude"].mean()),
+                "viirs_mean_lat": float(np.mean(v_lat_arr[v_indices_arr])),
+                "viirs_mean_lon": float(np.mean(v_lon_arr[v_indices_arr])),
                 "count_ratio": float(viirs_count),
-                "frp_ratio": float(total_viirs_frp / max(float(m_pt["frp"]), 1e-3)),
-                "region_id": str(m_pt.get("region_id", "UNKNOWN")),
-                "biome_id": int(m_pt.get("biome_id", 1)),
+                "frp_ratio": float(total_viirs_frp / max(m_frp_val, 1e-3)),
+                "region_id": str(m_reg_arr[m_idx]),
+                "biome_id": int(m_biome_arr[m_idx]),
             })
-
     pairs_df = pd.DataFrame(matched_pairs)
     logger.info(f"Extracted {len(pairs_df):,} clean 1-to-1 coincident clusters grouping {total_assigned_viirs:,} VIIRS detections.")
     return pairs_df
