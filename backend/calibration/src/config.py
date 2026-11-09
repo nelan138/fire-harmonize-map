@@ -62,12 +62,13 @@ FIRMS_SOURCES = {
     "VIIRS_NOAA21_NRT": "VIIRS NOAA-21 Near Real Time (375m)",
 }
 
-# Filtering & Quality Thresholds
+# Filtering & Quality Thresholds (Standardized: Δd <= 1,000m nadir pixel, Δt <= 30min daytime overpass)
 FILTER_CONFIG = {
     "modis_min_confidence": 30,         # Filter out MODIS confidence < 30%
     "viirs_drop_confidence": ["low"],   # Filter out VIIRS confidence = 'low' (keep nominal, high)
-    "coincident_max_distance_m": 1500.0, # Max spatial distance between Aqua and VIIRS (meters)
-    "coincident_max_time_diff_min": 45.0,# Max acquisition time difference (minutes - Aqua vs S-NPP afternoon pass)
+    "coincident_max_distance_m": 1000.0, # Max spatial distance between Aqua and VIIRS (meters)
+    "coincident_max_time_diff_min": 30.0,# Max acquisition time difference (minutes - Aqua vs S-NPP afternoon pass)
+    "require_daytime": True,             # Enforce daytime overpasses (daynight == 'D')
 }
 
 # Biome definitions matching MCD12Q1 aggregation in FIREHARMONIZE_7DAYS_PLAN.md

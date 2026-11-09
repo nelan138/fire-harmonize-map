@@ -1,10 +1,12 @@
 """
 FireHarmonize - Member A
 Coincident Overpass Extraction (Aqua MODIS vs Suomi-NPP VIIRS)
-Matches thermal anomalies observed during the 13:30 local solar time window
+Matches thermal anomalies observed during the daytime 13:30 local solar time window
 satisfying:
 1. Δt <= 30 minutes
-2. Δd <= 1,000 meters (Haversine spatial distance)
+2. Δd <= 1,000 meters (Haversine spatial distance, matching MODIS 1km nadir pixel)
+3. Daytime observations only (daynight == 'D')
+4. Voronoi 1-to-1 nearest-neighbor partitioning to strictly prevent multi-counting
 """
 
 import sys
@@ -35,30 +37,27 @@ def time_to_minutes(acq_time_val) -> int:
         return 0
 
 
-def haversine_distance_matrix(lat1, lon1, lat2, lon2):
-    """Compute Haversine distance in meters between two points or arrays"""
-    phi1, phi2 = np.radians(lat1), np.radians(lat2)
-    dphi = np.radians(lat2 - lat1)
-    dlambda = np.radians(lon2 - lon1)
-
-    a = np.sin(dphi / 2.0) ** 2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2.0) ** 2
-    c = 2.0 * np.arctan2(np.sqrt(a), np.sqrt(1.0 - a))
-    return EARTH_RADIUS_METERS * c
-
-
 def extract_coincident_pairs(
     df: pd.DataFrame,
     max_dist_m: float = None,
     max_time_diff_min: float = None,
+    require_daytime: bool = True,
 ) -> pd.DataFrame:
     """
-    Extract coincident observation pairs between Aqua MODIS and Suomi-NPP/NOAA-20 VIIRS.
+    Extract coincident observation pairs between Aqua MODIS and Suomi-NPP VIIRS
+    using strict 1-to-1 Voronoi spatial assignment to guarantee zero multi-counting.
     """
     if df.empty:
         return pd.DataFrame()
 
     max_dist_m = max_dist_m or FILTER_CONFIG["coincident_max_distance_m"]
     max_time_diff_min = max_time_diff_min or FILTER_CONFIG["coincident_max_time_diff_min"]
+
+    # 1. Enforce strict Daytime filter (13:30 afternoon overpass window)
+    if require_daytime and "daynight" in df.columns:
+        initial_count = len(df)
+        df = df[df["daynight"].astype(str).str.upper() == "D"].copy()
+        logger.info(f"Filtered for daytime overpasses (daynight == 'D'): {len(df):,} of {initial_count:,} events kept.")
 
     # Normalize instrument names
     df["instrument_norm"] = df["instrument"].astype(str).str.upper()
@@ -76,14 +75,18 @@ def extract_coincident_pairs(
     viirs_df["time_min"] = viirs_df["acq_time"].apply(time_to_minutes)
 
     matched_pairs = []
+    total_assigned_viirs = 0
 
     # Match within the same acquisition date
-    common_dates = set(modis_df["acq_date"].unique()).intersection(set(viirs_df["acq_date"].unique()))
-    logger.info(f"Finding coincident overpasses across {len(common_dates)} shared observation dates...")
+    common_dates = sorted(set(modis_df["acq_date"].unique()).intersection(set(viirs_df["acq_date"].unique())))
+    logger.info(f"Finding coincident overpasses across {len(common_dates)} shared observation dates (radius={max_dist_m}m, dt<={max_time_diff_min}m)...")
 
     for date in common_dates:
         m_day = modis_df[modis_df["acq_date"] == date].reset_index(drop=True)
         v_day = viirs_df[viirs_df["acq_date"] == date].reset_index(drop=True)
+
+        if m_day.empty or v_day.empty:
+            continue
 
         # Convert lat/lon to 3D Cartesian coordinates on unit sphere for fast spatial KDTree search
         m_lats, m_lons = np.radians(m_day["latitude"]), np.radians(m_day["longitude"])
@@ -100,57 +103,54 @@ def extract_coincident_pairs(
             np.sin(v_lats)
         ])
 
-        tree = cKDTree(v_xyz)
-        # Search radius in chord distance: 2 * sin(d / (2 * R))
+        # Voronoi 1-to-1 Partitioning:
+        # Build KDTree on MODIS centroids, then query for each VIIRS point.
+        # This guarantees each VIIRS point is assigned to AT MOST ONE nearest MODIS centroid!
+        tree_modis = cKDTree(m_xyz)
         chord_radius = 2.0 * np.sin(max_dist_m / (2.0 * EARTH_RADIUS_METERS))
-        indices_list = tree.query_ball_point(m_xyz, r=chord_radius)
+        dists, nearest_m_indices = tree_modis.query(v_xyz, distance_upper_bound=chord_radius)
 
-        for m_idx, v_indices in enumerate(indices_list):
-            if not v_indices:
-                continue
+        assigned_clusters = {}
+        for v_idx, (dist, m_idx) in enumerate(zip(dists, nearest_m_indices)):
+            if dist <= chord_radius and m_idx < len(m_day):
+                # Check acquisition time difference
+                dt = abs(v_day.loc[v_idx, "time_min"] - m_day.loc[m_idx, "time_min"])
+                if dt <= max_time_diff_min:
+                    assigned_clusters.setdefault(m_idx, []).append(v_idx)
+
+        for m_idx, v_indices in assigned_clusters.items():
+            v_sub = v_day.loc[v_indices]
+            m_pt = m_day.loc[m_idx]
             
-            m_time = m_day.loc[m_idx, "time_min"]
-            m_frp = m_day.loc[m_idx, "frp"]
-            m_lat = m_day.loc[m_idx, "latitude"]
-            m_lon = m_day.loc[m_idx, "longitude"]
+            total_viirs_frp = float(v_sub["frp"].sum())
+            viirs_count = int(len(v_indices))
+            total_assigned_viirs += viirs_count
 
-            # Filter by time difference
-            valid_v_indices = []
-            for v_idx in v_indices:
-                v_time = v_day.loc[v_idx, "time_min"]
-                if abs(m_time - v_time) <= max_time_diff_min:
-                    valid_v_indices.append(v_idx)
-
-            if valid_v_indices:
-                # Sum FRP of all collocated VIIRS sub-pixels within the 1km MODIS footprint
-                v_sub = v_day.loc[valid_v_indices]
-                total_viirs_frp = v_sub["frp"].sum()
-                viirs_count = len(valid_v_indices)
-
-                matched_pairs.append({
-                    "acq_date": date,
-                    "modis_lat": m_lat,
-                    "modis_lon": m_lon,
-                    "modis_time": m_day.loc[m_idx, "acq_time"],
-                    "modis_frp": m_frp,
-                    "modis_confidence": m_day.loc[m_idx, "confidence"],
-                    "viirs_count": viirs_count,
-                    "viirs_frp_sum": total_viirs_frp,
-                    "viirs_mean_lat": v_sub["latitude"].mean(),
-                    "viirs_mean_lon": v_sub["longitude"].mean(),
-                    "count_ratio": viirs_count / 1.0,
-                    "frp_ratio": total_viirs_frp / max(m_frp, 1e-3),
-                })
+            matched_pairs.append({
+                "acq_date": str(date),
+                "modis_lat": float(m_pt["latitude"]),
+                "modis_lon": float(m_pt["longitude"]),
+                "modis_time": int(m_pt["acq_time"]),
+                "modis_frp": float(m_pt["frp"]),
+                "modis_confidence": str(m_pt["confidence"]),
+                "viirs_count": viirs_count,
+                "viirs_frp_sum": total_viirs_frp,
+                "viirs_mean_lat": float(v_sub["latitude"].mean()),
+                "viirs_mean_lon": float(v_sub["longitude"].mean()),
+                "count_ratio": float(viirs_count),
+                "frp_ratio": float(total_viirs_frp / max(float(m_pt["frp"]), 1e-3)),
+                "region_id": str(m_pt.get("region_id", "UNKNOWN")),
+                "biome_id": int(m_pt.get("biome_id", 1)),
+            })
 
     pairs_df = pd.DataFrame(matched_pairs)
-    if "modis_confidence" in pairs_df.columns:
-        pairs_df["modis_confidence"] = pairs_df["modis_confidence"].astype(str)
-    logger.info(f"Extracted {len(pairs_df)} coincident overpass clusters!")
+    logger.info(f"Extracted {len(pairs_df):,} clean 1-to-1 coincident clusters grouping {total_assigned_viirs:,} VIIRS detections.")
     return pairs_df
 
 
 def save_coincident_pairs(df: pd.DataFrame, region_key: str) -> Path:
     """Save coincident pairs to parquet"""
+    PROCESSED_COINCIDENT_DIR.mkdir(parents=True, exist_ok=True)
     out_file = PROCESSED_COINCIDENT_DIR / f"{region_key}_coincident_pairs.parquet"
     df.to_parquet(out_file, index=False)
     logger.info(f"Saved coincident pairs to {out_file}")

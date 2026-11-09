@@ -1,3 +1,9 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.parquet.tmp
+
 # Nuxt dev/build outputs
 .output
 .data
