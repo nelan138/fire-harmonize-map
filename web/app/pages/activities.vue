@@ -12,13 +12,7 @@
 </template>
 
 <script setup lang="ts">
-type BurningData = {
-   region_id: string;
-   year: number;
-   month: number;
-   adj_fire_count: number;
-   sfai_alert_lvl: number;
-};
+import { getBurningData } from "~/utils/getBurningData";
 
 type HeatmapItem = {
    row: number;
@@ -28,8 +22,6 @@ type HeatmapItem = {
    tooltip?: string | number;
    filterValue: string | number;
 };
-
-const duckDb = useDuckDB();
 
 const results = ref<BurningData[]>([]);
 
@@ -58,16 +50,6 @@ const heatmapItems = computed<HeatmapItem[]>(() =>
 );
 
 onMounted(async () => {
-   results.value = await duckDb.query<BurningData>(`
-      SELECT
-         region_id,
-         year,
-         month,
-         adj_fire_count,
-         sfai_alert_lvl
-      FROM harmonized_fire_monthly
-      WHERE region_id = 'INDOCHINA'
-      ORDER BY region_id, year, month
-   `);
+   results.value = await getBurningData();
 });
 </script>
