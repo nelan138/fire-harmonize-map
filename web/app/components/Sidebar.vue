@@ -42,7 +42,7 @@ const items: NavigationMenuItem[] = [
    {
       label: "Scientific Validation",
       icon: "lucide:shield-check",
-      to: "/scientific-validation",
+      to: "/validation",
    },
 ];
 </script>
