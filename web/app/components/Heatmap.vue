@@ -41,7 +41,7 @@ export type HeatmapItem = {
    color: GridColor;
    val?: ValidValue;
    tooltip?: ValidValue;
-   filterValue: ValidValue;
+   filterValue?: ValidValue;
 };
 
 const { items, xAxis, yAxis } = defineProps<{
