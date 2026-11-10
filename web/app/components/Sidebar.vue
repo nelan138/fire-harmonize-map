@@ -27,18 +27,22 @@ const items: NavigationMenuItem[] = [
    {
       label: "Interactive map",
       icon: "lucide:globe",
+      to: "/map",
    },
    {
-      label: "Placeholder",
-      icon: "lucide:map",
+      label: "Burning activity calendar",
+      icon: "lucide:calendar-days",
+      to: "/burning-activities",
    },
    {
-      label: "Placeholder",
+      label: "SFAI Anomaly Diagnostics",
       icon: "lucide:flame",
+      to: "/anomaly-diagnostics",
    },
    {
-      label: "Placeholder",
-      icon: "lucide:shield-question-mark",
+      label: "Scientific Validation",
+      icon: "lucide:shield-check",
+      to: "/scientific-validation",
    },
 ];
 </script>
