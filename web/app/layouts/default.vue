@@ -19,7 +19,7 @@
       <UMain class="flex">
          <Sidebar v-model:open="open" />
 
-         <div class="min-w-0 flex-1">
+         <div class="min-w-0 flex-1 p-4">
             <slot />
          </div>
       </UMain>

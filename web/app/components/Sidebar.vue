@@ -32,12 +32,12 @@ const items: NavigationMenuItem[] = [
    {
       label: "Burning activity calendar",
       icon: "lucide:calendar-days",
-      to: "/burning-activities",
+      to: "/activities",
    },
    {
       label: "SFAI Anomaly Diagnostics",
       icon: "lucide:flame",
-      to: "/anomaly-diagnostics",
+      to: "/diagnostics",
    },
    {
       label: "Scientific Validation",
