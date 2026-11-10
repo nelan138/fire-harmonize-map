@@ -1,5 +1,16 @@
 # Fire Harmonize Map
 
+## Routes
+
+```text
+/
+|-- map                       Interactive fire-calibration map
+|   `-- fire_calibration_map.html
+|-- activities                Monthly burning-activity heatmap
+|-- diagnostics               SFAI anomaly diagnostics
+`-- validation                Scientific validation
+```
+
 ## Setup
 
 Make sure to navigate to directory `/web`
