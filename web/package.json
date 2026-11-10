@@ -41,6 +41,8 @@
     "vue-router": "^5.4.0"
   },
   "devDependencies": {
+    "@golar/vue": "^0.1.11",
+    "golar": "^0.1.11",
     "vitest": "^5.1.0"
   }
 }
