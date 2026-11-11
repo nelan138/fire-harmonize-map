@@ -23,8 +23,8 @@ const DATA_FILES = [
       viewName: "harmonized_fire_monthly",
    },
    {
-      fileName: "calibration_lookup.parquet",
-      viewName: "calibration_lookup",
+      fileName: "fire_events.parquet",
+      viewName: "fire_events",
    },
 ] as const;
 

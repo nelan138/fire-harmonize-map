@@ -44,6 +44,11 @@ const items: NavigationMenuItem[] = [
       icon: "lucide:shield-check",
       to: "/validation",
    },
+   {
+      label: "Debug",
+      icon: 'lucide:bug',
+      to: "/debug",
+   },
 ];
 </script>
 
