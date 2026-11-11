@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import debugQuery from "~/queries/fire_events.sql?raw";
+import debugQuery from "~/queries/debug.sql?raw";
 
 type DebugRow = Record<string, unknown>;
 
