@@ -3,12 +3,10 @@
 ## Routes
 
 ```text
-/
 |-- map                       Interactive fire-calibration map
-|   `-- fire_calibration_map.html
 |-- activities                Monthly burning-activity heatmap
 |-- diagnostics               SFAI anomaly diagnostics
-`-- validation                Scientific validation
+|-- validation                Scientific validation
 ```
 
 ## Setup

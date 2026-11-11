@@ -29,3 +29,4 @@ logs
 .env.*
 !.env.example
 .agents
+.notes
