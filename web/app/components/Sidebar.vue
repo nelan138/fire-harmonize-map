@@ -12,6 +12,7 @@
          :collapsed="state === 'collapsed'"
          :items="items"
          :ui="{ list: 'flex flex-col gap-4' }"
+         variant="link"
       />
    </USidebar>
 </template>
@@ -46,7 +47,7 @@ const items: NavigationMenuItem[] = [
    },
    {
       label: "Debug",
-      icon: 'lucide:bug',
+      icon: "lucide:bug",
       to: "/debug",
    },
 ];
