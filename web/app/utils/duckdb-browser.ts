@@ -19,8 +19,8 @@ const LOCAL_BUNDLES: duckdb.DuckDBBundles = {
 
 const DATA_FILES = [
    {
-      fileName: "harmonized_fire_monthly.parquet",
-      viewName: "harmonized_fire_monthly",
+      fileName: "fire_monthly.parquet",
+      viewName: "fire_monthly",
    },
    {
       fileName: "fire_events.parquet",
