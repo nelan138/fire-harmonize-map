@@ -1,2 +1,1 @@
-SELECT *
-FROM fire_events
+SELECT * FROM fire_events

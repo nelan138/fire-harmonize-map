@@ -45,16 +45,6 @@ import debugQuery from "~/queries/fire_events.sql?raw";
 
 type DebugRow = Record<string, unknown>;
 
-const toFieldLabel = (field: string): string =>
-   field
-      .split("_")
-      .map((word) =>
-         word === "id"
-            ? "ID"
-            : `${word.charAt(0).toUpperCase()}${word.slice(1)}`,
-      )
-      .join(" ");
-
 const pageSize = 10;
 const page = ref(1);
 const rows = ref<DebugRow[]>([]);
@@ -65,7 +55,7 @@ const columns = computed(() =>
    rows.value[0]
       ? Object.keys(rows.value[0]).map((field) => ({
            accessorKey: field,
-           header: toFieldLabel(field),
+           header: field,
         }))
       : [],
 );
