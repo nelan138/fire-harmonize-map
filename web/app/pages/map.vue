@@ -1,9 +1,7 @@
 <template>
-   <div class="h-[calc(100dvh-var(--ui-header-height))]">
-      <ClientOnly>
-         <WorldMap />
-      </ClientOnly>
-   </div>
+   <WorldMap>
+      <FireEvents />
+   </WorldMap>
 </template>
 
 <script setup lang="ts"></script>
