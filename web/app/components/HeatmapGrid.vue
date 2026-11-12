@@ -8,7 +8,7 @@
    >
       <div
          class="flex aspect-square w-10 items-center justify-center rounded-sm"
-         :class="colorClasses[color]"
+         :class="getHeatmapGridColor(color)"
       >
          {{ value }}
       </div>
@@ -19,17 +19,8 @@
 type ValidValue = string | number;
 
 const { tooltip, color = "gray" } = defineProps<{
-   color?: GridColor;
+   color?: HeatmapGridColor;
    value?: ValidValue;
    tooltip?: string;
 }>();
-
-const colorClasses: Record<GridColor, string> = {
-   gray: "bg-muted",
-   green: "bg-success/40",
-   yellow: "bg-warning/35",
-   orange: "bg-warning",
-   red: "bg-error/65",
-   darkred: "bg-error",
-};
 </script>

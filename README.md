@@ -44,25 +44,20 @@ yarn dev
 bun run dev
 ```
 
-## Client-side DuckDB
+## Fire data API
 
-DuckDB-WASM runs entirely in the browser and initializes lazily on the first
-query. It registers these views over the Parquet files in `web/public/data`:
+DuckDB runs on the Node.js server. SQL files live in `web/server/sql` and are
+bundled as server assets. Components fetch JSON from:
 
-- `harmonized_fire_monthly`
-- `calibration_lookup`
+- `/api/calibrated-fire-events`: up to 1,000 events for INDOCHINA.
+- `/api/fire-monthly`: monthly heatmap values for INDOCHINA.
 
-Use the `useDuckDB` composable from a Vue component. Query results are returned
-as plain objects, and values should be passed separately from the SQL string:
+The server reads `calibrated_fire_events.parquet` and `fire_monthly.parquet`
+from `public/data`, relative to the server's working directory. Set
+`NUXT_FIRE_DATA_DIR` to an absolute directory to use a different location.
 
-```ts
-const { query, status, error } = useDuckDB();
+This requires a Node.js deployment. After building, run from `web/.output`
+with `node server/index.mjs`, or set `NUXT_FIRE_DATA_DIR` to the deployed
+Parquet directory. Static generation cannot run these API endpoints.
 
-const rows = await query<{ year: number; month: number; fire_count: number }>(
-   `SELECT year, month, fire_count
-      FROM harmonized_fire_monthly
-     WHERE year = ?
-     ORDER BY month`,
-   [2023],
-);
-```
+Run `npm test` from `web` to check both SQL queries against the local files.

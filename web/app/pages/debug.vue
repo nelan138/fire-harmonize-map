@@ -41,8 +41,6 @@
 </template>
 
 <script setup lang="ts">
-import debugQuery from "~/queries/debug.sql?raw";
-
 type DebugRow = Record<string, unknown>;
 
 const pageSize = 10;
@@ -67,9 +65,7 @@ const visibleRows = computed(() => {
 
 onMounted(async () => {
    try {
-      const db = useDuckDB();
-
-      rows.value = await db.query(debugQuery);
+      rows.value = await $fetch<DebugRow[]>("/api/calibrated-fire-events");
    } catch (cause) {
       error.value = cause instanceof Error ? cause.message : String(cause);
    } finally {

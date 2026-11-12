@@ -41,6 +41,16 @@ const map = shallowRef<Map>();
 const coordinates = ref("");
 const toast = useToast();
 
+const epsg = "3857"; // flat online web maps
+const layerIdentifier = "BlueMarble_ShadedRelief_Bathymetry"; // cloudless
+const tileMatrixSet = "GoogleMapsCompatible_Level8"; // zoom 0 -> 8
+const tileMatrix = "{z}";
+const tileRow = "{y}";
+const tileCol = "{x}";
+const formatExt = "jpeg";
+
+const url = `https://gibs.earthdata.nasa.gov/wmts/epsg${epsg}/best/${layerIdentifier}/default/${tileMatrixSet}/${tileMatrix}/${tileRow}/${tileCol}.${formatExt}`;
+
 function goToCoordinates() {
    const parts = coordinates.value.split(",").map((part) => part.trim());
    const lat = Number(parts[0]);
@@ -64,14 +74,4 @@ function goToCoordinates() {
 
    map.value?.flyTo([lat, lng], 5);
 }
-
-const epsg = "3857"; // flat online web maps
-const layerIdentifier = "BlueMarble_ShadedRelief_Bathymetry"; // cloudless
-const tileMatrixSet = "GoogleMapsCompatible_Level8"; // zoom 0 -> 8
-const tileMatrix = "{z}";
-const tileRow = "{y}";
-const tileCol = "{x}";
-const formatExt = "jpeg";
-
-const url = `https://gibs.earthdata.nasa.gov/wmts/epsg${epsg}/best/${layerIdentifier}/default/${tileMatrixSet}/${tileMatrix}/${tileRow}/${tileCol}.${formatExt}`;
 </script>

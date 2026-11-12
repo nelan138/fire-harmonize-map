@@ -11,16 +11,14 @@
 </template>
 
 <script setup lang="ts">
-import query from "~/queries/fire_events.sql?raw";
-
 const toast = useToast();
 
 const fireEvents = ref<FireEvent[]>();
 
 onMounted(async () => {
-   const duckDb = useDuckDB();
-
-   const [queryResults, error] = await tryCatch(duckDb.query<FireEvent>(query));
+   const [queryResults, error] = await tryCatch(
+      $fetch<FireEvent[]>("/api/calibrated-fire-events"),
+   );
 
    if (queryResults) fireEvents.value = queryResults;
 

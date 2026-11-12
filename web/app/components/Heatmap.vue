@@ -17,7 +17,7 @@
          </div>
 
          <template v-for="(grids, y) in gridMatrix" :key="`y-${y}`">
-            <div class="pr-2 text-sm font-medium text-muted">
+            <div class="pr-2 text-left text-sm font-medium text-muted">
                {{ yAxis[y] }}
             </div>
 
@@ -52,17 +52,13 @@ const yAxis = shallowRef<ValidValue[]>([
    "December",
 ]);
 
-import query from "~/queries/fire_activities.sql?raw";
-
 const toast = useToast();
 
 const fireActivities = ref<FireActivity[]>();
 
 onMounted(async () => {
-   const duckDb = useDuckDB();
-
    const [queryResults, error] = await tryCatch(
-      duckDb.query<FireActivity>(query),
+      $fetch<FireActivity[]>("/api/fire-monthly"),
    );
 
    if (queryResults) {
@@ -115,15 +111,5 @@ const gridMatrix = computed<HeatmapGrid[][]>(() => {
    );
 });
 
-const colors: Record<number, HeatmapGridColor> = {
-   1: "green",
-   2: "yellow",
-   3: "orange",
-   4: "red",
-   5: "darkred",
-};
 
-function getAlertLevelColor(alertLevel: number) {
-   return colors[alertLevel] ?? "gray";
-}
 </script>
