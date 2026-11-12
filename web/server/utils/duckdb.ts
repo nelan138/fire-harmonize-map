@@ -1,9 +1,8 @@
 import { DuckDBInstance } from "@duckdb/node-api";
-import { resolve } from "node:path";
 
 let database: Promise<DuckDBInstance> | undefined;
 
-export async function queryFireData(sql: string, dataDir: string) {
+export async function queryFireData(sql: string, dataBaseUrl: string) {
    database ??= DuckDBInstance.create(":memory:").catch((error) => {
       database = undefined;
       throw error;
@@ -12,10 +11,10 @@ export async function queryFireData(sql: string, dataDir: string) {
 
    try {
       for (const [view, file] of [
-         ["fire_events", "calibrated_fire_events.parquet"],
+         ["fire_events", "fire_events.parquet"],
          ["fire_monthly", "fire_monthly.parquet"],
       ] as const) {
-         const path = resolve(dataDir, file).replaceAll("\\", "/").replaceAll("'", "''");
+         const path = new URL(file, `${dataBaseUrl.replace(/\/+$/, "")}/`).href.replaceAll("'", "''");
          await connection.run(
             `CREATE TEMP VIEW ${view} AS SELECT * FROM read_parquet('${path}')`,
          );

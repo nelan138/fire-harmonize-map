@@ -7,7 +7,7 @@ export default defineNuxtConfig({
    compatibilityDate: "2025-07-15",
    devtools: { enabled: false },
    runtimeConfig: {
-      fireDataDir: "public/data",
+      fireDataBaseUrl: "https://huggingface.co/datasets/leveluplevelyn/fire_event_nasaspaceapps/resolve/main/",
    },
    nitro: {
       serverAssets: [{ baseName: "sql", dir: fileURLToPath(new URL("./server/sql", import.meta.url)) }],
