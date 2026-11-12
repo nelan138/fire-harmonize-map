@@ -5,7 +5,7 @@
          :center="[16, 105]"
          :use-global-leaflet="false"
          :options="{ minZoom: 1, maxZoom: 8, worldCopyJump: true }"
-         class="h-full w-full"
+         class="isolate h-full w-full"
          @ready="map = $event"
       >
          <div
@@ -22,18 +22,9 @@
                variant="outline"
                placeholder="latitude, longitude"
                class="w-[30%]"
-               :color="coordinateError ? 'error' : 'neutral'"
-               :aria-invalid="!!coordinateError"
+               color="neutral"
                @keydown.enter.prevent="goToCoordinates"
-               @update:model-value="coordinateError = ''"
             />
-            <p
-               v-if="coordinateError"
-               role="alert"
-               class="mt-1 rounded bg-white px-2 text-sm text-red-600"
-            >
-               {{ coordinateError }}
-            </p>
          </div>
 
          <LTileLayer :url="url" attribution="NASA GIBS" :max-zoom="8" />
@@ -48,7 +39,7 @@ import type { Map } from "leaflet";
 
 const map = shallowRef<Map>();
 const coordinates = ref("");
-const coordinateError = ref("");
+const toast = useToast();
 
 function goToCoordinates() {
    const parts = coordinates.value.split(",").map((part) => part.trim());
@@ -63,12 +54,14 @@ function goToCoordinates() {
       Math.abs(lat) > 90 ||
       Math.abs(lng) > 180
    ) {
-      coordinateError.value =
-         "Enter latitude (-90 to 90), longitude (-180 to 180).";
+      toast.add({
+         title: "Invalid coordinates",
+         description: "Enter latitude (-90 to 90), longitude (-180 to 180).",
+         color: "error",
+      });
       return;
    }
 
-   coordinateError.value = "";
    map.value?.flyTo([lat, lng], 5);
 }
 
