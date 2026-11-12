@@ -7,6 +7,8 @@ export default defineNuxtConfig({
    compatibilityDate: "2025-07-15",
    devtools: { enabled: false },
    runtimeConfig: {
+      fireDensityPath: fileURLToPath(new URL("../backend/calibration/data/processed/calibrated/fire_density_h3_monthly.parquet", import.meta.url)),
+      harmonizedMonthlyPath: fileURLToPath(new URL("../backend/calibration/data/processed/calibrated/harmonized_fire_monthly.parquet", import.meta.url)),
       fireDataBaseUrl: "https://huggingface.co/datasets/leveluplevelyn/fire_event_nasaspaceapps/resolve/main/",
    },
    nitro: {

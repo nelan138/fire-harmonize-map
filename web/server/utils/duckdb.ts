@@ -2,12 +2,26 @@ import { DuckDBInstance } from "@duckdb/node-api";
 
 let database: Promise<DuckDBInstance> | undefined;
 
-export async function queryFireData(sql: string, dataBaseUrl: string) {
+async function connectFireDatabase() {
    database ??= DuckDBInstance.create(":memory:").catch((error) => {
       database = undefined;
       throw error;
    });
-   const connection = await (await database).connect();
+   return (await database).connect();
+}
+
+export async function queryHarmonizedMonthly(sql: string, path: string, filters: Record<string, string | number | null>) {
+   const connection = await connectFireDatabase();
+   try {
+      const result = await connection.runAndReadAll(sql, { ...filters, monthly_path: path });
+      return result.getRowObjectsJson();
+   } finally {
+      connection.closeSync();
+   }
+}
+
+export async function queryFireData(sql: string, dataBaseUrl: string) {
+   const connection = await connectFireDatabase();
 
    try {
       for (const [view, file] of [
