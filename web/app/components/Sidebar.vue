@@ -4,7 +4,7 @@
       v-slot="{ state }"
       collapsible="icon"
       :ui="{
-         container: 'top-(--ui-header-height) bg-default',
+         container: 'top-(--ui-header-height) bg-default z-1000',
       }"
    >
       <UNavigationMenu
