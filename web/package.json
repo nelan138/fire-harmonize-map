@@ -8,6 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "anomaly:parquet": "node --experimental-strip-types scripts/run-anomaly-on-parquet.mjs",
     "test": "vitest run"
   },
   "dependencies": {

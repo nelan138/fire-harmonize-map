@@ -1,6 +1,26 @@
 <template>
    <div class="overflow-x-auto">
+      <UAlert
+         v-if="loadError"
+         role="alert"
+         color="error"
+         variant="subtle"
+         icon="i-lucide-circle-alert"
+         title="Unable to load fire activities"
+         :description="loadError"
+      >
+         <template #actions>
+            <UButton
+               label="Retry"
+               variant="outline"
+               :loading="loading"
+               @click="loadFireMonthly"
+            />
+         </template>
+      </UAlert>
+
       <div
+         v-else
          class="grid w-fit items-center gap-2"
          :style="{
             gridTemplateColumns: `max-content repeat(${xAxis.length}, 2.5rem)`,
@@ -34,14 +54,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { FireActivity } from "../types/FireActivity";
-
 type ValidValue = string | number;
 
-const { activities } = defineProps<{ activities: FireActivity[] }>();
+const fireMonthlyStore = useFireMonthlyStore();
+const { fireActivities } = storeToRefs(fireMonthlyStore);
 
 const xAxis = computed(() =>
-   [...new Set(activities.map((activity) => activity.year))].sort((a, b) => a - b),
+   [...new Set((fireActivities.value ?? []).map((activity) => activity.year))]
+      .sort((a, b) => a - b),
 );
 const yAxis = shallowRef<ValidValue[]>([
    "January",
@@ -58,6 +78,18 @@ const yAxis = shallowRef<ValidValue[]>([
    "December",
 ]);
 
+const loadError = ref<string | null>(null);
+const loading = ref(false);
+
+async function loadFireMonthly() {
+   loading.value = true;
+   const [, error] = await tryCatch(fireMonthlyStore.loadFireMonthly());
+   loadError.value = error?.message ?? null;
+   loading.value = false;
+}
+
+onMounted(loadFireMonthly);
+
 type HeatmapGrid = {
    key: string;
    value?: ValidValue;
@@ -68,7 +100,7 @@ type HeatmapGrid = {
 
 const gridMatrix = computed<HeatmapGrid[][]>(() => {
    const activitiesByPosition = new Map(
-      activities.map((activity) => [
+      (fireActivities.value ?? []).map((activity) => [
          `${activity.month}:${activity.year}`,
          activity,
       ]),
@@ -90,4 +122,6 @@ const gridMatrix = computed<HeatmapGrid[][]>(() => {
       }),
    );
 });
+
+
 </script>

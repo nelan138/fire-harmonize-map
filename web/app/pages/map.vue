@@ -19,15 +19,9 @@
       </template>
    </UAlert>
 
-   <div class="h-[calc(100dvh-var(--ui-header-height)-2rem)] min-h-96">
-      <WorldMap>
-         <FireEvents />
-
-         <CircleArea />
-      </WorldMap>
-   </div>
-
-   <SidePanel />
+   <WorldMap>
+      <FireEvents />
+   </WorldMap>
 </template>
 
 <script setup lang="ts">

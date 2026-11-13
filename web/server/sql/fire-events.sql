@@ -11,5 +11,7 @@ SELECT
    region_id,
    biome_id
 FROM fire_events
-WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-LIMIT 1000
+WHERE latitude IS NOT NULL
+  AND longitude IS NOT NULL
+  AND region_id = 'INDOCHINA'
+LIMIT 1000;
