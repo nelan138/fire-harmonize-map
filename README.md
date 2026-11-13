@@ -60,7 +60,7 @@ https://huggingface.co/datasets/leveluplevelyn/fire_event_nasaspaceapps/resolve/
 | `fire_events.parquet` | `fire_events` | Individual fire detections |
 | `fire_monthly.parquet` | `fire_monthly` | Monthly counts and alert levels |
 
-These APIs do not require local Parquet files in `web/public/data`. The endpoint name `calibrated-fire-events` is retained, but its source file is `fire_events.parquet`; the endpoint does not perform calibration itself.
+These APIs do not require local Parquet files in `web/public/data`.
 
 ### Configuration
 
@@ -79,7 +79,7 @@ Restart the server after changing configuration. Use a commit revision instead o
 
 | Endpoint | SQL file in `web/server/sql` | Response |
 | --- | --- | --- |
-| `/api/calibrated-fire-events` | `calibrated-fire-events.sql` | Up to 1,000 INDOCHINA events with non-null coordinates |
+| `/api/fire-events` | `fire-events.sql` | Up to 1,000 INDOCHINA events with non-null coordinates |
 | `/api/fire-monthly` | `fire-monthly.sql` | INDOCHINA monthly records ordered by year and month |
 
 SQL files are bundled as Nitro server assets. `web/server/utils/duckdb.ts` creates connection-local views over the remote files, executes the requested SQL, and returns JSON-safe records.
@@ -107,7 +107,7 @@ npm test
 
 The integration tests query the public Hugging Face dataset directly. They check event coordinates and region, the event limit, monthly ordering, numeric values, and JSON serialization. Internet access is required; each test allows up to 60 seconds. The test dataset URL is defined in `web/tests/fire-data.test.ts`, independently of Nuxt runtime configuration.
 
-For a manual check, open `/api/calibrated-fire-events` and `/api/fire-monthly` in the browser and confirm that both return JSON arrays. Then check `/map`, `/activities`, and `/debug`.
+For a manual check, open `/api/fire-events` and `/api/fire-monthly` in the browser and confirm that both return JSON arrays. Then check `/map`, `/activities`, and `/debug`.
 
 ## Production
 

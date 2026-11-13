@@ -17,7 +17,7 @@ const fireEvents = shallowRef<FireEvent[]>();
 
 onMounted(async () => {
    const [queryResults, error] = await tryCatch(
-      $fetch<FireEvent[]>("/api/calibrated-fire-events"),
+      $fetch<FireEvent[]>("/api/fire-events"),
    );
 
    if (queryResults) fireEvents.value = queryResults;

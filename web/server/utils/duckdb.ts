@@ -10,16 +10,6 @@ async function connectFireDatabase() {
    return (await database).connect();
 }
 
-export async function queryHarmonizedMonthly(sql: string, path: string, filters: Record<string, string | number | null>) {
-   const connection = await connectFireDatabase();
-   try {
-      const result = await connection.runAndReadAll(sql, { ...filters, monthly_path: path });
-      return result.getRowObjectsJson();
-   } finally {
-      connection.closeSync();
-   }
-}
-
 export async function queryFireData(sql: string, dataBaseUrl: string) {
    const connection = await connectFireDatabase();
 
@@ -28,7 +18,10 @@ export async function queryFireData(sql: string, dataBaseUrl: string) {
          ["fire_events", "fire_events.parquet"],
          ["fire_monthly", "fire_monthly.parquet"],
       ] as const) {
-         const path = new URL(file, `${dataBaseUrl.replace(/\/+$/, "")}/`).href.replaceAll("'", "''");
+         const path = new URL(
+            file,
+            `${dataBaseUrl.replace(/\/+$/, "")}/`,
+         ).href.replaceAll("'", "''");
          await connection.run(
             `CREATE TEMP VIEW ${view} AS SELECT * FROM read_parquet('${path}')`,
          );

@@ -65,7 +65,7 @@ const visibleRows = computed(() => {
 
 onMounted(async () => {
    try {
-      rows.value = await $fetch<DebugRow[]>("/api/calibrated-fire-events");
+      rows.value = await $fetch<DebugRow[]>("/api/fire-events");
    } catch (cause) {
       error.value = cause instanceof Error ? cause.message : String(cause);
    } finally {
