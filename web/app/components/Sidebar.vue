@@ -4,7 +4,7 @@
       v-slot="{ state }"
       collapsible="icon"
       :ui="{
-         container: 'top-(--ui-header-height) bg-default z-1000',
+         container: 'top-(--ui-header-height) bg-default',
       }"
    >
       <UNavigationMenu
@@ -12,7 +12,6 @@
          :collapsed="state === 'collapsed'"
          :items="items"
          :ui="{ list: 'flex flex-col gap-4' }"
-         variant="link"
       />
    </USidebar>
 </template>
@@ -28,27 +27,18 @@ const items: NavigationMenuItem[] = [
    {
       label: "Interactive map",
       icon: "lucide:globe",
-      to: "/map",
    },
    {
-      label: "Burning activity calendar",
-      icon: "lucide:calendar-days",
-      to: "/activities",
+      label: "Placeholder",
+      icon: "lucide:map",
    },
    {
-      label: "SFAI Anomaly Diagnostics",
+      label: "Placeholder",
       icon: "lucide:flame",
-      to: "/diagnostics",
    },
    {
-      label: "Scientific Validation",
-      icon: "lucide:shield-check",
-      to: "/validation",
-   },
-   {
-      label: "Debug",
-      icon: "lucide:bug",
-      to: "/debug",
+      label: "Placeholder",
+      icon: "lucide:shield-question-mark",
    },
 ];
 </script>
