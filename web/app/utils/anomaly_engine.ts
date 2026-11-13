@@ -34,9 +34,7 @@ export interface ChowTestResult {
   };
   status: ChowStatus;
 
-  // True means we failed to find statistically significant
-  // evidence of a break. It does NOT prove no break exists.
-  structuralBreakEliminated: boolean;
+  noSignificantBreakDetected: boolean;
 
   verdict: string;
 }
@@ -51,7 +49,7 @@ export interface FullAnomalyPayload {
   selectedDate: string;
   sfaiMetrics: SFAIResult;
   chowTestVerification: ChowTestResult;
-  climateContext: ClimateContextResult;
+  climateContext: ClimateContextResult | null;
 }
 
 // ============================================================
@@ -131,7 +129,7 @@ export function calculateSFAI(
 
   // Fire activity classification.
   // ENSO conditions are reported separately.
-  if (roundedZ >= 2.0) {
+  if (zScore >= 2.0) {
     return {
       zScore: roundedZ,
       alertLevel: "Extreme Fire Anomaly",
@@ -142,7 +140,7 @@ export function calculateSFAI(
     };
   }
 
-  if (roundedZ >= 1.5) {
+  if (zScore >= 1.5) {
     return {
       zScore: roundedZ,
       alertLevel: "Severe Fire Anomaly",
@@ -153,7 +151,7 @@ export function calculateSFAI(
     };
   }
 
-  if (roundedZ >= 1.0) {
+  if (zScore >= 1.0) {
     return {
       zScore: roundedZ,
       alertLevel: "Elevated Fire Activity",
@@ -164,7 +162,7 @@ export function calculateSFAI(
     };
   }
 
-  if (roundedZ <= -1.5) {
+  if (zScore <= -1.5) {
     return {
       zScore: roundedZ,
       alertLevel: "Unusually Low Fire Activity",
@@ -441,7 +439,7 @@ export function runChowTest(
       denominator: Math.max(0, dfDen)
     },
     status: "inconclusive",
-    structuralBreakEliminated: false,
+    noSignificantBreakDetected: false,
     verdict: message
   });
 
@@ -463,6 +461,10 @@ export function runChowTest(
       .every(Number.isFinite)
   ) {
     throw new RangeError("Chow test data must contain only finite numbers.");
+  }
+
+  if ([...pre2012Counts, ...post2012Counts].some((value) => value < 0)) {
+    throw new RangeError("Chow test fire counts must be non-negative.");
   }
 
   if (dfDen <= 0) {
@@ -540,9 +542,9 @@ export function runChowTest(
         denominator: dfDen
       },
       status: "break-detected",
-      structuralBreakEliminated: false,
+      noSignificantBreakDetected: false,
       verdict:
-        "FAIL: Statistically significant structural break detected (p <= 0.10)."
+        "Evidence of a statistically significant structural break at the supplied breakpoint (p <= 0.10)."
     };
   }
 
@@ -554,9 +556,9 @@ export function runChowTest(
       denominator: dfDen
     },
     status: "no-significant-break",
-    structuralBreakEliminated: true,
+    noSignificantBreakDetected: true,
     verdict:
-      "PASS: No statistically significant structural break detected (p > 0.10). This does not prove that no break exists."
+      "No statistically significant structural break detected (p > 0.10); this does not prove the absence of a break."
   };
 }
 
@@ -621,7 +623,7 @@ export function generateAnomalyPayload(
   historicalVals: number[],
   pre2012Counts: number[],
   post2012Counts: number[],
-  oniIndex: number,
+  oniIndex: number | null,
   dateStr: string
 ): FullAnomalyPayload {
 
@@ -638,9 +640,8 @@ export function generateAnomalyPayload(
       post2012Counts
     ),
 
-    climateContext: getClimateContext(
-      oniIndex,
-      dateStr
-    )
+    climateContext: oniIndex === null
+      ? null
+      : getClimateContext(oniIndex, dateStr)
   };
 }
