@@ -41,11 +41,12 @@
 </template>
 
 <script setup lang="ts">
-type DebugRow = Record<string, unknown>;
+const fireEventsStore = useFireEventsStore();
+const { fireEvents } = storeToRefs(fireEventsStore);
 
 const pageSize = 10;
 const page = ref(1);
-const rows = ref<DebugRow[]>([]);
+const rows = computed(() => fireEvents.value ?? []);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
@@ -64,12 +65,8 @@ const visibleRows = computed(() => {
 });
 
 onMounted(async () => {
-   try {
-      rows.value = await $fetch<DebugRow[]>("/api/fire-events");
-   } catch (cause) {
-      error.value = cause instanceof Error ? cause.message : String(cause);
-   } finally {
-      loading.value = false;
-   }
+   const [, loadError] = await tryCatch(fireEventsStore.loadFireEvents());
+   error.value = loadError?.message ?? null;
+   loading.value = false;
 });
 </script>

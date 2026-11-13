@@ -36,7 +36,13 @@
 <script lang="ts" setup>
 type ValidValue = string | number;
 
-const xAxis = ref<ValidValue[]>([]);
+const fireMonthlyStore = useFireMonthlyStore();
+const { fireActivities } = storeToRefs(fireMonthlyStore);
+
+const xAxis = computed(() =>
+   [...new Set((fireActivities.value ?? []).map((activity) => activity.year))]
+      .sort((a, b) => a - b),
+);
 const yAxis = shallowRef<ValidValue[]>([
    "January",
    "February",
@@ -54,19 +60,8 @@ const yAxis = shallowRef<ValidValue[]>([
 
 const toast = useToast();
 
-const fireActivities = shallowRef<FireActivity[]>();
-
 onMounted(async () => {
-   const [queryResults, error] = await tryCatch(
-      $fetch<FireActivity[]>("/api/fire-monthly"),
-   );
-
-   if (queryResults) {
-      fireActivities.value = queryResults;
-      xAxis.value = [
-         ...new Set(queryResults.map((activity) => activity.year)),
-      ].sort((a, b) => a - b);
-   }
+   const [, error] = await tryCatch(fireMonthlyStore.loadFireMonthly());
 
    if (error) {
       toast.add({

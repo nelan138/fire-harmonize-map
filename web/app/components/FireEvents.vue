@@ -12,15 +12,11 @@
 
 <script setup lang="ts">
 const toast = useToast();
-
-const fireEvents = shallowRef<FireEvent[]>();
+const fireEventsStore = useFireEventsStore();
+const { fireEvents } = storeToRefs(fireEventsStore);
 
 onMounted(async () => {
-   const [queryResults, error] = await tryCatch(
-      $fetch<FireEvent[]>("/api/fire-events"),
-   );
-
-   if (queryResults) fireEvents.value = queryResults;
+   const [, error] = await tryCatch(fireEventsStore.loadFireEvents());
 
    if (error) {
       toast.add({
