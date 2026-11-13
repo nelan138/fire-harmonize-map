@@ -570,7 +570,7 @@ export function runChowTest(
  * Provides climate context from an ONI value.
  *
  * A single ONI value is not enough to establish an
- * official El Niño or La Niña episode. Official event
+ * official El NiÃ±o or La NiÃ±a episode. Official event
  * classification also considers persistence over time.
  */
 export function getClimateContext(
