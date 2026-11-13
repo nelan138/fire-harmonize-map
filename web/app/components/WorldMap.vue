@@ -1,0 +1,88 @@
+<template>
+   <ClientOnly>
+      <LMap
+         :zoom="5"
+         :center="[16, 105]"
+         :use-global-leaflet="false"
+         :options="{ minZoom: 1, maxZoom: 8, worldCopyJump: true }"
+         class="isolate h-full w-full"
+         @ready="map = $event"
+         @click="circleAreaStore.clickedLocation = $event.latlng"
+      >
+         <div
+            class="w-full flex flex-col items-center absolute z-1000 p-4"
+            @click.stop
+            @dblclick.stop
+            @pointerdown.stop
+            @keydown.stop
+         >
+            <UFormField
+               label="Coordinates (latitude, longitude)"
+               class="w-[30%]"
+               :ui="{ wrapper: 'sr-only', container: 'mt-0' }"
+            >
+               <UInput
+                  v-model="coordinates"
+                  icon="i-lucide-search"
+                  size="md"
+                  variant="outline"
+                  :placeholder="searchFocused ? 'Latitude, longitude' : 'Search'"
+                  class="light scheme-light w-full"
+                  color="neutral"
+                  @focus="searchFocused = true"
+                  @blur="searchFocused = false"
+                  @keydown.enter.prevent="goToCoordinates"
+               />
+            </UFormField>
+         </div>
+
+         <LTileLayer :url="url" attribution="NASA GIBS" :max-zoom="8" />
+
+         <slot />
+      </LMap>
+   </ClientOnly>
+</template>
+
+<script setup lang="ts">
+import type { Map } from "leaflet";
+
+const circleAreaStore = useCircleAreaStore();
+const map = shallowRef<Map>();
+const coordinates = ref("");
+const searchFocused = ref(false);
+const toast = useToast();
+
+const epsg = "3857"; // flat online web maps
+const layerIdentifier = "BlueMarble_ShadedRelief_Bathymetry"; // cloudless
+const tileMatrixSet = "GoogleMapsCompatible_Level8"; // zoom 0 -> 8
+const tileMatrix = "{z}";
+const tileRow = "{y}";
+const tileCol = "{x}";
+const formatExt = "jpeg";
+
+const url = `https://gibs.earthdata.nasa.gov/wmts/epsg${epsg}/best/${layerIdentifier}/default/${tileMatrixSet}/${tileMatrix}/${tileRow}/${tileCol}.${formatExt}`;
+
+function goToCoordinates() {
+   const parts = coordinates.value.split(",").map((part) => part.trim());
+   const lat = Number(parts[0]);
+   const lng = Number(parts[1]);
+
+   if (
+      parts.length !== 2 ||
+      parts.some((part) => part === "") ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      Math.abs(lat) > 90 ||
+      Math.abs(lng) > 180
+   ) {
+      toast.add({
+         title: "Invalid coordinates",
+         description: "Enter latitude (-90 to 90), longitude (-180 to 180).",
+         color: "error",
+      });
+      return;
+   }
+
+   map.value?.flyTo([lat, lng], 5);
+}
+</script>
