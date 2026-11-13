@@ -6,3 +6,4 @@ SELECT
    CAST(sfai_alert_lvl AS INTEGER) AS sfai_alert_lvl
 FROM fire_monthly
 ORDER BY region_id, year, month
+LIMIT 1000
