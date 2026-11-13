@@ -13,7 +13,7 @@
 <script setup lang="ts">
 const toast = useToast();
 
-const fireEvents = ref<FireEvent[]>();
+const fireEvents = shallowRef<FireEvent[]>();
 
 onMounted(async () => {
    const [queryResults, error] = await tryCatch(

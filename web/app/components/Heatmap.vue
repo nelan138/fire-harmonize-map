@@ -54,7 +54,7 @@ const yAxis = shallowRef<ValidValue[]>([
 
 const toast = useToast();
 
-const fireActivities = ref<FireActivity[]>();
+const fireActivities = shallowRef<FireActivity[]>();
 
 onMounted(async () => {
    const [queryResults, error] = await tryCatch(
