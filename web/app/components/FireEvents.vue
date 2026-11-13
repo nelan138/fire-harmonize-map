@@ -11,20 +11,6 @@
 </template>
 
 <script setup lang="ts">
-const toast = useToast();
 const fireEventsStore = useFireEventsStore();
 const { fireEvents } = storeToRefs(fireEventsStore);
-
-onMounted(async () => {
-   const [, error] = await tryCatch(fireEventsStore.loadFireEvents());
-
-   if (error) {
-      toast.add({
-         title: "Unable to load fire events",
-         description: error.message,
-         color: "error",
-         icon: "lucide:alert-octagon",
-      });
-   }
-});
 </script>

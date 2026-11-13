@@ -15,16 +15,24 @@
             @pointerdown.stop
             @keydown.stop
          >
-            <UInput
-               v-model="coordinates"
-               icon="i-lucide-search"
-               size="md"
-               variant="outline"
-               placeholder="latitude, longitude"
+            <UFormField
+               label="Coordinates (latitude, longitude)"
                class="w-[30%]"
-               color="neutral"
-               @keydown.enter.prevent="goToCoordinates"
-            />
+               :ui="{ wrapper: 'sr-only', container: 'mt-0' }"
+            >
+               <UInput
+                  v-model="coordinates"
+                  icon="i-lucide-search"
+                  size="md"
+                  variant="outline"
+                  :placeholder="searchFocused ? 'Latitude, longitude' : 'Search'"
+                  class="light scheme-light w-full"
+                  color="neutral"
+                  @focus="searchFocused = true"
+                  @blur="searchFocused = false"
+                  @keydown.enter.prevent="goToCoordinates"
+               />
+            </UFormField>
          </div>
 
          <LTileLayer :url="url" attribution="NASA GIBS" :max-zoom="8" />
@@ -39,6 +47,7 @@ import type { Map } from "leaflet";
 
 const map = shallowRef<Map>();
 const coordinates = ref("");
+const searchFocused = ref(false);
 const toast = useToast();
 
 const epsg = "3857"; // flat online web maps

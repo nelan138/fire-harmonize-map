@@ -3,7 +3,12 @@
       <UHeader :ui="{ container: 'max-w-none px-0 sm:px-0 lg:px-4' }">
          <template #left>
             <div class="flex gap-8">
-               <UButton icon="lucide:panel-left-open" @click="open = !open" />
+               <UButton
+                  icon="i-lucide-panel-left-open"
+                  aria-label="Toggle sidebar"
+                  :aria-expanded="open"
+                  @click="open = !open"
+               />
 
                <span class="text-xl font-bold tracking-tight">
                   Fire<span class="text-primary">Harmonize</span>

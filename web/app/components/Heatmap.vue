@@ -1,6 +1,26 @@
 <template>
    <div class="overflow-x-auto">
+      <UAlert
+         v-if="loadError"
+         role="alert"
+         color="error"
+         variant="subtle"
+         icon="i-lucide-circle-alert"
+         title="Unable to load fire activities"
+         :description="loadError"
+      >
+         <template #actions>
+            <UButton
+               label="Retry"
+               variant="outline"
+               :loading="loading"
+               @click="loadFireMonthly"
+            />
+         </template>
+      </UAlert>
+
       <div
+         v-else
          class="grid w-fit items-center gap-2"
          :style="{
             gridTemplateColumns: `max-content repeat(${xAxis.length}, 2.5rem)`,
@@ -58,20 +78,17 @@ const yAxis = shallowRef<ValidValue[]>([
    "December",
 ]);
 
-const toast = useToast();
+const loadError = ref<string | null>(null);
+const loading = ref(false);
 
-onMounted(async () => {
+async function loadFireMonthly() {
+   loading.value = true;
    const [, error] = await tryCatch(fireMonthlyStore.loadFireMonthly());
+   loadError.value = error?.message ?? null;
+   loading.value = false;
+}
 
-   if (error) {
-      toast.add({
-         title: "Unable to load fire activities",
-         description: error.message,
-         color: "error",
-         icon: "lucide:alert-octagon",
-      });
-   }
-});
+onMounted(loadFireMonthly);
 
 type HeatmapGrid = {
    key: string;
