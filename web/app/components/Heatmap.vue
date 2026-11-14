@@ -1,7 +1,7 @@
 <template>
-   <div class="overflow-x-auto p-1">
+   <div class="max-w-full overflow-x-auto overscroll-x-contain p-1">
       <div
-         class="grid w-fit items-center gap-2"
+         class="grid w-max items-center gap-2"
          :style="{
             gridTemplateColumns: `max-content repeat(${xAxis.length}, 2.5rem)`,
          }"

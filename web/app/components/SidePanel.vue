@@ -22,7 +22,8 @@
                   <span class="flex min-w-0 flex-col gap-1 text-left">
                      <span class="text-highlighted">{{ item.label }}</span>
                      <span class="font-normal text-muted">
-                        {{ item.latitude.toFixed(4) }}, {{ item.longitude.toFixed(4) }}
+                        {{ item.latitude.toFixed(4) }},
+                        {{ item.longitude.toFixed(4) }}
                      </span>
                   </span>
                </template>
@@ -34,7 +35,9 @@
                      <dt class="text-muted">Instrument</dt>
                      <dd>{{ item.instrument ?? "Unknown" }}</dd>
                      <dt class="text-muted">Fire radiative power</dt>
-                     <dd>{{ item.frp == null ? "Unknown" : `${item.frp} MW` }}</dd>
+                     <dd>
+                        {{ item.frp == null ? "Unknown" : `${item.frp} MW` }}
+                     </dd>
                      <dt class="text-muted">Confidence</dt>
                      <dd>{{ item.confidence ?? "Unknown" }}</dd>
                   </dl>

@@ -11,7 +11,7 @@
          class="flex aspect-square w-10 cursor-pointer items-center justify-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default"
          :class="[
             getHeatmapGridColor(color),
-            { 'ring-2 ring-primary ring-offset-2 ring-offset-(--ui-bg)': selected },
+            { 'ring-2 ring-primary ring-offset-2 ring-offset-bg': selected },
          ]"
          :aria-label="label"
          :aria-pressed="selected"
