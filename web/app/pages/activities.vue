@@ -40,12 +40,10 @@
             }}</H2>
 
             <Heatmap
-               v-if="region.activities.length"
-               :activities="region.activities"
-               :selected-activity="selectedActivity"
-               @select="
-                  selectedActivity = selectedActivity === $event ? null : $event
-               "
+               v-if="region.months.length"
+               :months="region.months"
+               :selected-key="selectedKey"
+               @select="selectedKey = selectedKey === $event ? null : $event"
             />
 
             <Gomennasai
@@ -55,47 +53,45 @@
             />
          </div>
          
-         <DiagnosisCards v-if="selectedActivity" :activity="selectedActivity" />
-         <FireHistoryHistogram
-            v-if="selectedActivity && fireActivities"
-            :activity="selectedActivity"
-            :activities="fireActivities"
-         />
-         <BiomeBreakdown
-            v-if="selectedActivity && fireActivities"
-            :activity="selectedActivity"
-            :activities="fireActivities"
-         />
-         <SensorComparison
-            v-if="selectedActivity && fireActivities"
-            :activity="selectedActivity"
-            :activities="fireActivities"
-         />
+         <template v-if="selectedMonth">
+            <DiagnosisCards :selected-month="selectedMonth" />
+            <FireHistoryHistogram :selected-month="selectedMonth" />
+            <BiomeBreakdown :selected-month="selectedMonth" />
+            <SensorComparison :selected-month="selectedMonth" />
+         </template>
       </template>
    </div>
 </template>
 
 <script setup lang="ts">
-import type { FireActivity } from "../types/FireActivity";
+import { fireMonthlyRequestKey } from "../stores/fire-monthly";
+import { getSelectedFireMonth, groupFireMonths } from "../utils/getSelectedFireMonth";
 
 const { nearbyFireEvents } = storeToRefs(useCircleAreaStore());
 const fireMonthlyStore = useFireMonthlyStore();
-const { fireActivities } = storeToRefs(fireMonthlyStore);
-const loadError = ref<string | null>(null);
-const loading = ref(false);
-const selectedActivity = shallowRef<FireActivity | null>(null);
+const selectedKey = ref<string | null>(null);
 
 const regionIds = computed(() => [
    ...new Set(nearbyFireEvents.value.map((event) => event.region_id)),
 ]);
+
+const requestKey = computed(() => fireMonthlyRequestKey(regionIds.value));
+const request = computed(() => fireMonthlyStore.getRequest(requestKey.value));
+const months = computed(() =>
+   request.value.status === "success" ? groupFireMonths(request.value.rows) : [],
+);
+
 const selectedRegions = computed(() =>
    regionIds.value.map((id) => ({
       id,
-      activities: (fireActivities.value ?? []).filter(
-         (activity) => activity.region_id === id,
-      ),
+      months: months.value.filter((month) => month.regionId === id),
    })),
 );
+
+const selectedMonth = computed(() => {
+   const selection = months.value.find(({ key }) => key === selectedKey.value);
+   return selection ? getSelectedFireMonth(selection, months.value) : null;
+});
 
 const monthlyState = computed(() => {
    if (!regionIds.value.length) {
@@ -106,15 +102,15 @@ const monthlyState = computed(() => {
       };
    }
 
-   if (loadError.value) {
+   if (request.value.status === "error") {
       return {
          kind: "error",
          title: "Unable to load fire activities",
-         description: loadError.value,
+         description: request.value.message,
       };
    }
 
-   if (loading.value || !fireActivities.value) {
+   if (request.value.status !== "success") {
       return {
          kind: "loading",
          title: "Loading monthly fire activity…",
@@ -125,26 +121,15 @@ const monthlyState = computed(() => {
    return null;
 });
 
-watch([regionIds, fireActivities], () => {
-   const activity = selectedActivity.value;
-   if (
-      activity &&
-      (!regionIds.value.includes(activity.region_id) ||
-         !fireActivities.value?.includes(activity))
-   ) {
-      selectedActivity.value = null;
-   }
+watch(request, (result) => {
+   if (result.status === "success" && !selectedMonth.value) selectedKey.value = null;
 });
 
-async function loadFireMonthly() {
-   loading.value = true;
-   loadError.value = null;
-   const [, error] = await tryCatch(fireMonthlyStore.loadFireMonthly());
-   loadError.value = error?.message ?? null;
-   loading.value = false;
+function loadFireMonthly() {
+   if (regionIds.value.length) void fireMonthlyStore.loadFireMonthly(regionIds.value);
+   else selectedKey.value = null;
 }
 
-onMounted(() => {
-   if (regionIds.value.length) void loadFireMonthly();
-});
+watch(requestKey, loadFireMonthly);
+onMounted(loadFireMonthly);
 </script>

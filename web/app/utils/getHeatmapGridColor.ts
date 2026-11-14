@@ -1,7 +1,8 @@
-export type HeatmapGridColor = "gray" | "purple" | "red" | "orange" | "gold" | "yellow";
+export type HeatmapGridColor = "gray" | "neutral" | "purple" | "red" | "orange" | "gold" | "yellow";
 
 const colorClasses: Record<HeatmapGridColor, string> = {
    gray: "bg-muted",
+   neutral: "bg-primary/20",
    purple: "bg-[#420a68] text-white",
    red: "bg-[#932667] text-white",
    orange: "bg-[#dd513a] text-black",

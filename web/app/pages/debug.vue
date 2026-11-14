@@ -41,14 +41,16 @@
 </template>
 
 <script setup lang="ts">
+import { fireMonthlyRequestKey } from "../stores/fire-monthly";
+
 const fireMonthlyStore = useFireMonthlyStore();
-const { fireActivities } = storeToRefs(fireMonthlyStore);
+const request = computed(() => fireMonthlyStore.getRequest(fireMonthlyRequestKey()));
 
 const pageSize = 10;
 const page = ref(1);
-const rows = computed(() => fireActivities.value ?? []);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const rows = computed(() => request.value.status === "success" ? request.value.rows : []);
+const loading = computed(() => request.value.status === "idle" || request.value.status === "pending");
+const error = computed(() => request.value.status === "error" ? request.value.message : null);
 
 const columns = computed(() =>
    rows.value[0]
@@ -64,9 +66,5 @@ const visibleRows = computed(() => {
    return rows.value.slice(start, start + pageSize);
 });
 
-onMounted(async () => {
-   const [, loadError] = await tryCatch(fireMonthlyStore.loadFireMonthly());
-   error.value = loadError?.message ?? null;
-   loading.value = false;
-});
+onMounted(() => void fireMonthlyStore.loadFireMonthly());
 </script>
