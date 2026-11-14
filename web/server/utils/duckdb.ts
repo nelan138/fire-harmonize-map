@@ -15,8 +15,8 @@ export async function queryFireData(sql: string, dataBaseUrl: string) {
 
    try {
       for (const [view, file] of [
-         ["fire_events", "fire_events.parquet"],
-         ["fire_monthly", "fire_monthly.parquet"],
+         ["fire_events", "GLOBAL_5_REGIONS_clean_fire_events.parquet"],
+         ["fire_monthly", "harmonized_fire_monthly.parquet"],
       ] as const) {
          const path = new URL(
             file,

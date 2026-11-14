@@ -1,14 +1,15 @@
 <template>
-   <section aria-labelledby="monthly-diagnosis-title" aria-live="polite" class="space-y-4">
+   <section :aria-labelledby="titleId" aria-live="polite" class="space-y-4">
       <div>
-         <H2 id="monthly-diagnosis-title">Monthly diagnosis</H2>
+         <H2 :id="titleId">Monthly diagnosis</H2>
          <p class="text-sm text-muted">
             <span class="capitalize">{{ regionName }}</span> · {{ monthLabel }}
+            <span v-if="printBrief"> · {{ recordScope }}</span>
          </p>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-         <DiagnosisCard
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 print:grid-cols-2">
+         <KpiCard
             v-for="card in diagnosisCards"
             :key="card.label"
             :label="card.label"
@@ -23,7 +24,11 @@
 <script setup lang="ts">
 import type { FireActivity } from "../types/FireActivity";
 
-const { activity } = defineProps<{ activity: FireActivity }>();
+const { activity, printBrief = false } = defineProps<{
+   activity: FireActivity;
+   printBrief?: boolean;
+}>();
+const titleId = useId();
 const { fireActivities } = storeToRefs(useFireMonthlyStore());
 const historicalChange = computed(() =>
    getHistoricalChange(activity, fireActivities.value),
@@ -32,6 +37,12 @@ const historicalChange = computed(() =>
 const regionName = computed(() =>
    activity.region_id.toLowerCase().replaceAll("_", " "),
 );
+const recordScope = computed(() => {
+   const biome = activity.biome_id == null ? "Selected record" : `Biome ${activity.biome_id}`;
+   return activity.h3_index && activity.h3_index !== "N/A"
+      ? `${biome} · H3 ${activity.h3_index}`
+      : biome;
+});
 const monthLabel = computed(() => {
    return new Intl.DateTimeFormat("en", {
       month: "long",
@@ -52,7 +63,7 @@ const diagnosisCards = computed(() => {
       ? `${activity.sfai_zscore > 0 ? "+" : ""}${activity.sfai_zscore.toFixed(2)}σ`
       : "Unavailable";
 
-   return [
+   const cards = [
       {
          label: "Fire count",
          value: activity.adj_fire_count.toLocaleString("en"),
@@ -83,5 +94,15 @@ const diagnosisCards = computed(() => {
          color: alertLabel ? getAlertLevelColor(activity.sfai_alert_lvl) : undefined,
       },
    ];
+
+   if (!printBrief) {
+      cards.push({
+         label: "Oceanic Niño Index",
+         value: "+1.2 °C",
+         detail: "El Niño (placeholder)",
+      });
+   }
+
+   return cards;
 });
 </script>

@@ -56,6 +56,21 @@
          </div>
          
          <DiagnosisCards v-if="selectedActivity" :activity="selectedActivity" />
+         <FireHistoryHistogram
+            v-if="selectedActivity && fireActivities"
+            :activity="selectedActivity"
+            :activities="fireActivities"
+         />
+         <BiomeBreakdown
+            v-if="selectedActivity && fireActivities"
+            :activity="selectedActivity"
+            :activities="fireActivities"
+         />
+         <SensorComparison
+            v-if="selectedActivity && fireActivities"
+            :activity="selectedActivity"
+            :activities="fireActivities"
+         />
       </template>
    </div>
 </template>
