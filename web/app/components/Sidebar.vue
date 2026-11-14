@@ -52,5 +52,3 @@ const items: NavigationMenuItem[] = [
    },
 ];
 </script>
-
-<style scoped></style>

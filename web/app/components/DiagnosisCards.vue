@@ -18,23 +18,38 @@
          />
       </div>
 
-      <div v-if="!printBrief && !selectedMonth.selectedRecord" class="overflow-x-auto">
+      <div
+         v-if="!printBrief && !selectedMonth.selectedRecord"
+         class="overflow-x-auto"
+      >
          <table class="w-full text-left text-sm">
-            <caption class="pb-2 text-left text-muted">
-               SFAI and alert level by source record
+            <caption class="text-left">
+               <H2> SFAI and alert level by source record </H2>
             </caption>
             <thead class="text-muted">
                <tr>
-                  <th scope="col" class="py-2 pr-4 font-medium">Record scope</th>
-                  <th scope="col" class="py-2 pr-4 font-medium">SFAI Z-score</th>
+                  <th scope="col" class="py-2 pr-4 font-medium">
+                     Record scope
+                  </th>
+                  <th scope="col" class="py-2 pr-4 font-medium">
+                     SFAI Z-score
+                  </th>
                   <th scope="col" class="py-2 font-medium">Alert level</th>
                </tr>
             </thead>
-            <tbody class="divide-y divide-default border-t border-default tabular-nums">
+            <tbody
+               class="divide-y divide-default border-t border-default tabular-nums"
+            >
                <tr v-for="(record, index) in selectedMonth.rows" :key="index">
-                  <th scope="row" class="py-2 pr-4 font-medium">{{ recordScope(record) }}</th>
-                  <td class="whitespace-nowrap py-2 pr-4">{{ formatZScore(record.sfai_zscore) }}</td>
-                  <td class="whitespace-nowrap py-2">{{ formatAlertLevel(record.sfai_alert_lvl) }}</td>
+                  <th scope="row" class="py-2 pr-4 font-medium">
+                     {{ recordScope(record) }}
+                  </th>
+                  <td class="whitespace-nowrap py-2 pr-4">
+                     {{ formatZScore(record.sfai_zscore) }}
+                  </td>
+                  <td class="whitespace-nowrap py-2">
+                     {{ formatAlertLevel(record.sfai_alert_lvl) }}
+                  </td>
                </tr>
             </tbody>
          </table>
@@ -79,14 +94,19 @@ const changeFormat = new Intl.NumberFormat("en", {
 });
 
 function recordScope(record: FireMonthly) {
-   const biome = record.biome_id == null ? "Biome unspecified" : `Biome ${record.biome_id}`;
+   const biome =
+      record.biome_id == null
+         ? "Biome unspecified"
+         : `Biome ${record.biome_id}`;
    return record.h3_index && record.h3_index !== "N/A"
       ? `${biome} · H3 ${record.h3_index}`
       : biome;
 }
 
 function formatZScore(score: number | null) {
-   return score === null ? "Unavailable" : `${score > 0 ? "+" : ""}${score.toFixed(2)}σ`;
+   return score === null
+      ? "Unavailable"
+      : `${score > 0 ? "+" : ""}${score.toFixed(2)}σ`;
 }
 
 function formatAlertLevel(level: number | null) {
@@ -96,15 +116,26 @@ function formatAlertLevel(level: number | null) {
 
 const diagnosisCards = computed(() => {
    const { totals, historicalChange, selectedRecord } = selectedMonth;
-   const cards: { label: string; value: string; detail: string; color?: HeatmapGridColor }[] = [
+   const cards: {
+      label: string;
+      value: string;
+      detail: string;
+      color?: HeatmapGridColor;
+   }[] = [
       {
          label: "Fire count",
-         value: totals.fireCount === null ? "Unavailable" : countFormat.format(totals.fireCount),
+         value:
+            totals.fireCount === null
+               ? "Unavailable"
+               : countFormat.format(totals.fireCount),
          detail: "Regional VIIRS-equivalent detections",
       },
       {
          label: "Historical change",
-         value: historicalChange === null ? "Unavailable" : `${changeFormat.format(historicalChange)}%`,
+         value:
+            historicalChange === null
+               ? "Unavailable"
+               : `${changeFormat.format(historicalChange)}%`,
          detail: "vs. same-month regional totals (2000–2024)",
       },
    ];
@@ -113,7 +144,11 @@ const diagnosisCards = computed(() => {
       const scope = recordScope(selectedRecord);
       const level = selectedRecord.sfai_alert_lvl;
       cards.push(
-         { label: "SFAI Z-score", value: formatZScore(selectedRecord.sfai_zscore), detail: scope },
+         {
+            label: "SFAI Z-score",
+            value: formatZScore(selectedRecord.sfai_zscore),
+            detail: scope,
+         },
          {
             label: "Alert level",
             value: formatAlertLevel(level),
@@ -129,9 +164,10 @@ const diagnosisCards = computed(() => {
       const highest = scores.length ? Math.max(...scores) : null;
       cards.push({
          label: "SFAI Z-score range",
-         value: lowest === highest
-            ? formatZScore(lowest)
-            : `${formatZScore(lowest)} to ${formatZScore(highest)}`,
+         value:
+            lowest === highest
+               ? formatZScore(lowest)
+               : `${formatZScore(lowest)} to ${formatZScore(highest)}`,
          detail: `Across ${scores.length} of ${selectedMonth.rows.length} source records`,
       });
    }

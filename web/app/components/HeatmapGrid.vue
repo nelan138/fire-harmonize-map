@@ -17,15 +17,11 @@
          :aria-pressed="selected"
          :disabled="disabled"
          @click="emit('select')"
-      >
-         {{ value }}
-      </button>
+      />
    </UTooltip>
 </template>
 
 <script setup lang="ts">
-type ValidValue = string | number;
-
 const {
    tooltip,
    color = "gray",
@@ -33,7 +29,6 @@ const {
    disabled = false,
 } = defineProps<{
    color?: HeatmapGridColor;
-   value?: ValidValue;
    tooltip?: string;
    label: string;
    selected?: boolean;
