@@ -5,7 +5,8 @@ export type FireActivity = {
    adj_fire_count: number;
    sfai_alert_lvl: number;
    sfai_zscore?: number | null;
-   
+   historical_change: number | string | null;
+
    /* ? Additional fields maybe */
    h3_index?: string | null;
    biome_id?: number | null;
