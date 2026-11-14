@@ -41,12 +41,12 @@
 </template>
 
 <script setup lang="ts">
-const fireEventsStore = useFireEventsStore();
-const { fireEvents } = storeToRefs(fireEventsStore);
+const fireMonthlyStore = useFireMonthlyStore();
+const { fireActivities } = storeToRefs(fireMonthlyStore);
 
 const pageSize = 10;
 const page = ref(1);
-const rows = computed(() => fireEvents.value ?? []);
+const rows = computed(() => fireActivities.value ?? []);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
@@ -65,7 +65,7 @@ const visibleRows = computed(() => {
 });
 
 onMounted(async () => {
-   const [, loadError] = await tryCatch(fireEventsStore.loadFireEvents());
+   const [, loadError] = await tryCatch(fireMonthlyStore.loadFireMonthly());
    error.value = loadError?.message ?? null;
    loading.value = false;
 });
