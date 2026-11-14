@@ -9,5 +9,5 @@ export type FireEvent = {
    instrument: string;
    daynight: string;
    region_id: string;
-   biome_id: string;
+   biome_id: string | null;
 };
