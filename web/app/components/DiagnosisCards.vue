@@ -24,6 +24,10 @@
 import type { FireActivity } from "../types/FireActivity";
 
 const { activity } = defineProps<{ activity: FireActivity }>();
+const { fireActivities } = storeToRefs(useFireMonthlyStore());
+const historicalChange = computed(() =>
+   getHistoricalChange(activity, fireActivities.value),
+);
 
 const regionName = computed(() =>
    activity.region_id.toLowerCase().replaceAll("_", " "),
@@ -61,8 +65,14 @@ const diagnosisCards = computed(() => {
       },
       {
          label: "Historical change",
-         value: "Unavailable",
-         detail: "% above or below the historical monthly average",
+         value: historicalChange.value === null
+            ? "Unavailable"
+            : `${new Intl.NumberFormat("en", {
+                 signDisplay: "exceptZero",
+                 minimumFractionDigits: 1,
+                 maximumFractionDigits: 1,
+              }).format(historicalChange.value)}%`,
+         detail: "vs. available same-month records (2000–2024)",
       },
       {
          label: "Alert level",
