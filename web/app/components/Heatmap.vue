@@ -1,5 +1,5 @@
 <template>
-   <div class="overflow-x-auto">
+   <div class="overflow-x-auto p-1">
       <div
          class="grid w-fit items-center gap-2"
          :style="{
@@ -27,6 +27,10 @@
                :value="grid.value"
                :color="grid.color"
                :tooltip="grid.tooltip"
+               :label="grid.label"
+               :selected="!!grid.activity && grid.activity === selectedActivity"
+               :disabled="!grid.activity"
+               @select="grid.activity && emit('select', grid.activity)"
             />
          </template>
       </div>
@@ -38,7 +42,11 @@ import type { FireActivity } from "../types/FireActivity";
 
 type ValidValue = string | number;
 
-const { activities } = defineProps<{ activities: FireActivity[] }>();
+const { activities, selectedActivity = null } = defineProps<{
+   activities: FireActivity[];
+   selectedActivity?: FireActivity | null;
+}>();
+const emit = defineEmits<{ select: [activity: FireActivity] }>();
 
 const xAxis = computed(() =>
    [...new Set(activities.map((activity) => activity.year))].sort((a, b) => a - b),
@@ -63,7 +71,8 @@ type HeatmapGrid = {
    value?: ValidValue;
    color: HeatmapGridColor;
    tooltip?: string;
-   filterValue?: ValidValue;
+   label: string;
+   activity?: FireActivity;
 };
 
 const gridMatrix = computed<HeatmapGrid[][]>(() => {
@@ -80,6 +89,10 @@ const gridMatrix = computed<HeatmapGrid[][]>(() => {
 
          return {
             key: `${y}:${x}`,
+            activity,
+            label: activity
+               ? `${activity.region_id.replaceAll("_", " ")}, ${yAxis.value[y]} ${year}`
+               : `${yAxis.value[y]} ${year}: no monthly data`,
             color: activity
                ? getAlertLevelColor(activity.sfai_alert_lvl)
                : "gray",
