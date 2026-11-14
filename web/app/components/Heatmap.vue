@@ -24,7 +24,6 @@
             <HeatmapGrid
                v-for="grid in grids"
                :key="grid.key"
-               :value="grid.value"
                :color="grid.color"
                :tooltip="grid.tooltip"
                :label="grid.label"
@@ -40,8 +39,6 @@
 <script lang="ts" setup>
 import type { FireMonth } from "../utils/getSelectedFireMonth";
 
-type ValidValue = string | number;
-
 const { months, selectedKey = null } = defineProps<{
    months: FireMonth[];
    selectedKey?: string | null;
@@ -51,7 +48,7 @@ const emit = defineEmits<{ select: [key: string] }>();
 const xAxis = computed(() =>
    [...new Set(months.map(({ year }) => year))].sort((a, b) => a - b),
 );
-const yAxis = shallowRef<ValidValue[]>([
+const yAxis = [
    "January",
    "February",
    "March",
@@ -64,11 +61,10 @@ const yAxis = shallowRef<ValidValue[]>([
    "October",
    "November",
    "December",
-]);
+];
 
 type HeatmapGrid = {
    key: string;
-   value?: ValidValue;
    color: HeatmapGridColor;
    tooltip?: string;
    label: string;
@@ -80,20 +76,29 @@ const gridMatrix = computed<HeatmapGrid[][]>(() => {
       months.map((month) => [`${month.month}:${month.year}`, month]),
    );
 
-   return yAxis.value.map((_, y) =>
+   return yAxis.map((monthLabel, y) =>
       xAxis.value.map((year, x) => {
          const fireMonth = monthsByPosition.get(`${y + 1}:${year}`);
-         const level = fireMonth?.selectedRecord?.sfai_alert_lvl;
+         const rows = fireMonth?.rows ?? [];
+         const level = rows.reduce(
+            (highest, { sfai_alert_lvl }) =>
+               sfai_alert_lvl !== null && getAlertLevelColor(sfai_alert_lvl) !== "gray"
+                  ? Math.max(highest, sfai_alert_lvl)
+                  : highest,
+            0,
+         );
          const count = fireMonth?.totals.fireCount?.toLocaleString("en") ?? "Unavailable";
-         const alert = level == null ? "See diagnosis for record-level alerts" : `Alert Level: ${level}`;
+         const alert = level
+            ? `${rows.length > 1 ? "Highest record alert" : "Alert level"}: ${level}`
+            : "Alert level unavailable";
 
          return {
             key: `${y}:${x}`,
             fireMonth,
             label: fireMonth
-               ? `${fireMonth.regionId.replaceAll("_", " ")}, ${yAxis.value[y]} ${year}`
-               : `${yAxis.value[y]} ${year}: no monthly data`,
-            color: level != null ? getAlertLevelColor(level) : fireMonth ? "neutral" : "gray",
+               ? `${fireMonth.regionId.replaceAll("_", " ")}, ${monthLabel} ${year}`
+               : `${monthLabel} ${year}: no monthly data`,
+            color: level ? getAlertLevelColor(level) : fireMonth ? "neutral" : "gray",
             tooltip: fireMonth ? `Regional Fire Count: ${count}\n${alert}` : undefined,
          };
       }),

@@ -28,8 +28,6 @@
             <slot />
          </div>
       </UMain>
-
-      <!-- <UFooter /> -->
    </div>
 </template>
 
