@@ -35,7 +35,7 @@
             <h1 class="text-2xl font-semibold">Monthly fire brief</h1>
          </header>
 
-         <DiagnosisCards :activity="activity" print-brief />
+         <DiagnosisCards :selected-month="selectedMonth" print-brief />
 
          <section class="mt-5 break-inside-avoid">
             <H2>Operational summary</H2>
@@ -65,40 +65,21 @@
 </template>
 
 <script setup lang="ts">
-import type { FireActivity } from "../types/FireActivity";
+import type { SelectedFireMonth } from "~/utils/getSelectedFireMonth";
 
-const { activity, activities } = defineProps<{
-   activity: FireActivity;
-   activities: FireActivity[];
+const { selectedMonth } = defineProps<{
+   selectedMonth: SelectedFireMonth;
 }>();
 
 const sources = [
-   { field: "raw_modis_count", label: "Raw MODIS (1 km)" },
-   { field: "raw_viirs_count", label: "Raw VIIRS (375 m)" },
-   { field: "adj_fire_count", label: "FireHarmonize (VIIRS-equivalent)" },
+   { field: "rawModisCount", label: "Raw MODIS (1 km)" },
+   { field: "rawViirsCount", label: "Raw VIIRS (375 m)" },
+   { field: "fireCount", label: "FireHarmonize (VIIRS-equivalent)" },
 ] as const;
 
-const comparison = computed(() => {
-   const rows = activities.filter((row) =>
-      row.region_id === activity.region_id &&
-      row.year === activity.year &&
-      row.month === activity.month,
-   );
-
-   return sources.map(({ label, field }) => {
-      if (!rows.length) return { label, count: null };
-
-      let count = 0;
-      for (const row of rows) {
-         const value = row[field];
-         if (value == null || !Number.isFinite(value) || value < 0) {
-            return { label, count: null };
-         }
-         count += value;
-      }
-      return { label, count };
-   });
-});
+const comparison = computed(() =>
+   sources.map(({ label, field }) => ({ label, count: selectedMonth.totals[field] })),
+);
 
 const maxCount = computed(() => Math.max(1, ...comparison.value.map(({ count }) => count ?? 0)));
 const numberFormat = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
@@ -108,18 +89,17 @@ function formatCount(count: number | null) {
 }
 
 const operationalSummary = computed(() => {
-   switch (activity.sfai_alert_lvl) {
-      case 5:
-      case 4:
-         return "The selected record shows high or emergency fire activity. Verify conditions with current imagery and local reports before deciding on a response.";
-      case 3:
-         return "The selected record shows elevated fire activity. Review local conditions and continue monitoring.";
-      case 2:
-      case 1:
-         return "The selected record shows normal or minimal fire activity. Continue routine monitoring.";
-      default:
-         return "The selected record has no alert level. Check current imagery and local reports for conditions.";
-   }
+   const levels = selectedMonth.rows.map((row) => row.sfai_alert_lvl);
+   const available = levels.filter((level) => level !== null).length;
+   if (!available) return "Alert levels were unavailable for this month.";
+
+   const elevated = levels.filter((level) => level !== null && level >= 3).length;
+   const high = levels.filter((level) => level !== null && level >= 4).length;
+   const coverage = `${available} of ${levels.length} source records have an alert level.`;
+   const summary = `${elevated} reached elevated or higher, including ${high} at high or emergency.`;
+   return high
+      ? `${coverage} ${summary} Verify current conditions with imagery and local reports.`
+      : `${coverage} ${summary}`;
 });
 
 function printBrief() {

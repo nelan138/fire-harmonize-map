@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { shallowRef } from "vue";
-import type { FireEvent } from "../types/FireEvent";
+import type { FireEvent } from "#shared/types/FireEvent";
 import { tryCatch } from "../utils/tryCatch";
 
 export const useFireEventsStore = defineStore("fire-events", () => {

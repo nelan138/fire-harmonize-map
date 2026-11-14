@@ -38,7 +38,7 @@
                      aria-hidden="true"
                      class="w-5 border-t-2 border-error"
                   />
-                  {{ activity.year }} ·
+                  {{ selectedMonth.year }} ·
                   {{ formatCount(distribution.selectedCount) }}
                </span>
             </div>
@@ -55,50 +55,35 @@
 <script setup lang="ts">
 import { defineChart, rect, ruleX } from "@tanstack/charts";
 import { scaleLinear } from "@tanstack/charts/scales/linear";
-import type { FireActivity } from "../types/FireActivity";
+import type { SelectedFireMonth } from "~/utils/getSelectedFireMonth";
 
-const { activity, activities } = defineProps<{
-   activity: FireActivity;
-   activities: FireActivity[];
+const { selectedMonth } = defineProps<{
+   selectedMonth: SelectedFireMonth;
 }>();
 
 const monthLabel = computed(() =>
    new Intl.DateTimeFormat("en", {
       month: "long",
       timeZone: "UTC",
-   }).format(new Date(Date.UTC(activity.year, activity.month - 1))),
+   }).format(new Date(Date.UTC(selectedMonth.year, selectedMonth.month - 1))),
 );
 
 const formatCount = new Intl.NumberFormat("en", { maximumFractionDigits: 1 })
    .format;
 
 const distribution = computed(() => {
-   const totals = new Map<number, number>();
-
-   for (const row of activities) {
-      if (row.region_id !== activity.region_id || row.month !== activity.month)
-         continue;
-      if (row.year < 2000 || row.year > 2024) continue;
-
-      const count = row.adj_fire_count;
-      const validCount = Number.isFinite(count) && count >= 0 ? count : NaN;
-      totals.set(row.year, (totals.get(row.year) ?? 0) + validCount);
-   }
-
-   const counts = [...totals.values()].filter(Number.isFinite);
+   const counts = selectedMonth.history.map(({ count }) => count);
    if (counts.length < 2) return null;
 
    const mean = counts.reduce((sum, count) => sum + count, 0) / counts.length;
    const variance =
       counts.reduce((sum, count) => sum + (count - mean) ** 2, 0) /
       counts.length;
-   const selectedCount = totals.get(activity.year) ?? NaN;
-
    return {
       counts,
       mean,
       standardDeviation: Math.sqrt(variance),
-      selectedCount: Number.isFinite(selectedCount) ? selectedCount : null,
+      selectedCount: selectedMonth.totals.fireCount,
    };
 });
 

@@ -28,9 +28,9 @@
                :color="grid.color"
                :tooltip="grid.tooltip"
                :label="grid.label"
-               :selected="!!grid.activity && grid.activity === selectedActivity"
-               :disabled="!grid.activity"
-               @select="grid.activity && emit('select', grid.activity)"
+               :selected="!!grid.fireMonth && grid.fireMonth.key === selectedKey"
+               :disabled="!grid.fireMonth"
+               @select="grid.fireMonth && emit('select', grid.fireMonth.key)"
             />
          </template>
       </div>
@@ -38,18 +38,18 @@
 </template>
 
 <script lang="ts" setup>
-import type { FireActivity } from "../types/FireActivity";
+import type { FireMonth } from "../utils/getSelectedFireMonth";
 
 type ValidValue = string | number;
 
-const { activities, selectedActivity = null } = defineProps<{
-   activities: FireActivity[];
-   selectedActivity?: FireActivity | null;
+const { months, selectedKey = null } = defineProps<{
+   months: FireMonth[];
+   selectedKey?: string | null;
 }>();
-const emit = defineEmits<{ select: [activity: FireActivity] }>();
+const emit = defineEmits<{ select: [key: string] }>();
 
 const xAxis = computed(() =>
-   [...new Set(activities.map((activity) => activity.year))].sort((a, b) => a - b),
+   [...new Set(months.map(({ year }) => year))].sort((a, b) => a - b),
 );
 const yAxis = shallowRef<ValidValue[]>([
    "January",
@@ -72,33 +72,29 @@ type HeatmapGrid = {
    color: HeatmapGridColor;
    tooltip?: string;
    label: string;
-   activity?: FireActivity;
+   fireMonth?: FireMonth;
 };
 
 const gridMatrix = computed<HeatmapGrid[][]>(() => {
-   const activitiesByPosition = new Map(
-      activities.map((activity) => [
-         `${activity.month}:${activity.year}`,
-         activity,
-      ]),
+   const monthsByPosition = new Map(
+      months.map((month) => [`${month.month}:${month.year}`, month]),
    );
 
    return yAxis.value.map((_, y) =>
       xAxis.value.map((year, x) => {
-         const activity = activitiesByPosition.get(`${y + 1}:${year}`);
+         const fireMonth = monthsByPosition.get(`${y + 1}:${year}`);
+         const level = fireMonth?.selectedRecord?.sfai_alert_lvl;
+         const count = fireMonth?.totals.fireCount?.toLocaleString("en") ?? "Unavailable";
+         const alert = level == null ? "See diagnosis for record-level alerts" : `Alert Level: ${level}`;
 
          return {
             key: `${y}:${x}`,
-            activity,
-            label: activity
-               ? `${activity.region_id.replaceAll("_", " ")}, ${yAxis.value[y]} ${year}`
+            fireMonth,
+            label: fireMonth
+               ? `${fireMonth.regionId.replaceAll("_", " ")}, ${yAxis.value[y]} ${year}`
                : `${yAxis.value[y]} ${year}: no monthly data`,
-            color: activity
-               ? getAlertLevelColor(activity.sfai_alert_lvl)
-               : "gray",
-            tooltip: activity
-               ? `Fire Count: ${activity.adj_fire_count}\nAlert Level: ${activity.sfai_alert_lvl}`
-               : undefined,
+            color: level != null ? getAlertLevelColor(level) : fireMonth ? "neutral" : "gray",
+            tooltip: fireMonth ? `Regional Fire Count: ${count}\n${alert}` : undefined,
          };
       }),
    );

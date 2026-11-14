@@ -72,11 +72,10 @@
 import { barX, defineChart } from "@tanstack/charts";
 import { scaleBand } from "@tanstack/charts/scales/band";
 import { scaleLinear } from "@tanstack/charts/scales/linear";
-import type { FireActivity } from "../types/FireActivity";
+import type { SelectedFireMonth } from "~/utils/getSelectedFireMonth";
 
-const { activity, activities } = defineProps<{
-   activity: FireActivity;
-   activities: FireActivity[];
+const { selectedMonth } = defineProps<{
+   selectedMonth: SelectedFireMonth;
 }>();
 
 const biomeNames: Record<number, string> = {
@@ -112,21 +111,14 @@ function formatMetric({ value, share }: Metric) {
 
 const biomes = computed(() => {
    const byBiome = new Map<number | null, Totals>();
-   const totals: Totals = { detections: 0, frp: 0 };
+   let totalFrp: number | null = 0;
 
-   for (const row of activities) {
-      if (
-         row.region_id !== activity.region_id ||
-         row.year !== activity.year ||
-         row.month !== activity.month
-      ) continue;
-
+   for (const row of selectedMonth.rows) {
       const id = row.biome_id ?? null;
       const biome = byBiome.get(id) ?? { detections: 0, frp: 0 };
       biome.detections = addValue(biome.detections, row.adj_fire_count);
       biome.frp = addValue(biome.frp, row.adj_frp_mw);
-      totals.detections = addValue(totals.detections, row.adj_fire_count);
-      totals.frp = addValue(totals.frp, row.adj_frp_mw);
+      totalFrp = addValue(totalFrp, row.adj_frp_mw);
       byBiome.set(id, biome);
    }
 
@@ -140,8 +132,8 @@ const biomes = computed(() => {
          id,
          name: id === null ? "Unknown biome" : (biomeNames[id] ?? `Biome ${id}`),
          color: id !== null && biomeNames[id] ? `var(--ui-chart-${id})` : "var(--ui-text-muted)",
-         detections: metric(values.detections, totals.detections),
-         frp: metric(values.frp, totals.frp),
+         detections: metric(values.detections, selectedMonth.totals.fireCount),
+         frp: metric(values.frp, totalFrp),
       }));
 });
 

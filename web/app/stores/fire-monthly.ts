@@ -1,36 +1,49 @@
 import { defineStore } from "pinia";
 import { shallowRef } from "vue";
-import type { FireActivity } from "../types/FireActivity";
+import type { FireMonthly } from "#shared/types/FireMonthly";
 import { tryCatch } from "../utils/tryCatch";
 
+type MonthlyRequest =
+   | { status: "idle" | "pending" }
+   | { status: "error"; message: string }
+   | { status: "success"; rows: FireMonthly[] };
+
+export function fireMonthlyRequestKey(regions: readonly string[] = []) {
+   return JSON.stringify([...new Set(regions)].sort());
+}
+
 export const useFireMonthlyStore = defineStore("fire-monthly", () => {
-   const fireActivities = shallowRef<FireActivity[] | null>(null);
-   let pendingRequest: Promise<void> | undefined;
+   const requests = shallowRef<Partial<Record<string, MonthlyRequest>>>({});
+   const pendingRequests = new Map<string, Promise<void>>();
 
-   async function loadFireMonthly() {
-      if (fireActivities.value !== null) {
-         return;
-      }
-
-      if (!pendingRequest) {
-         pendingRequest = cacheFireActivities(
-            $fetch<FireActivity[]>("/api/fire-monthly"),
-         );
-      }
-
-      await pendingRequest;
+   function setRequest(key: string, request: MonthlyRequest) {
+      requests.value = { ...requests.value, [key]: request };
    }
 
-   async function cacheFireActivities(request: Promise<FireActivity[]>) {
-      const [activities, error] = await tryCatch(request);
-      pendingRequest = undefined;
-
-      if (error) {
-         throw error;
-      }
-
-      fireActivities.value = activities;
+   function getRequest(key: string): MonthlyRequest {
+      return requests.value[key] ?? { status: "idle" };
    }
 
-   return { fireActivities, loadFireMonthly };
+   async function fetchMonthly(key: string, regions: readonly string[]) {
+      const [rows, error] = await tryCatch($fetch<FireMonthly[]>("/api/fire-monthly", {
+         query: regions.length ? { regions } : undefined,
+      }));
+
+      setRequest(key, error ? { status: "error", message: error.message } : { status: "success", rows });
+   }
+
+   function loadFireMonthly(regions: readonly string[] = []) {
+      const key = fireMonthlyRequestKey(regions);
+      if (getRequest(key).status === "success") return;
+
+      const pending = pendingRequests.get(key);
+      if (pending) return pending;
+
+      const request = fetchMonthly(key, regions).finally(() => pendingRequests.delete(key));
+      pendingRequests.set(key, request);
+      setRequest(key, { status: "pending" });
+      return request;
+   }
+
+   return { requests, getRequest, loadFireMonthly };
 });
