@@ -45,12 +45,16 @@ class SeriesHarmonizer:
         self.biomes_data = {}
         for biome_id in self.lookup_df["biome_id"].unique():
             sub = self.lookup_df[self.lookup_df["biome_id"] == biome_id].sort_values("quantile_step")
+            m_q = sub["modis_q_val"].values
+            v_q = sub["viirs_q_val"].values
+            cluster_mult = float(np.mean(v_q) / max(np.mean(m_q), 1e-4))
             self.biomes_data[int(biome_id)] = {
                 "q_steps": sub["quantile_step"].values,
-                "modis_q": sub["modis_q_val"].values,
-                "viirs_q": sub["viirs_q_val"].values,
+                "modis_q": m_q,
+                "viirs_q": v_q,
                 "alpha": float(sub["frp_alpha"].iloc[0]),
                 "beta": float(sub["frp_beta"].iloc[0]),
+                "cluster_multiplier": cluster_mult,
             }
 
     def harmonize_count(self, raw_modis_count: float, biome_id: int) -> float:
@@ -130,10 +134,8 @@ class SeriesHarmonizer:
                 beta = b_data["beta"]
                 # Event-level power scaling (strictly preserves energy when summed)
                 adj_frps[mask_m] = np.exp(beta) * (np.maximum(m_frp, 0.1) ** alpha)
-                # Detection count mapping for single footprint
-                # 1 MODIS detection converts to median sub-pixel sensitivity
-                single_ratio = b_data["viirs_q"][0] / max(b_data["modis_q"][0], 1.0)
-                adj_counts[mask_m] = single_ratio
+                # Detection count mapping for single footprint using empirical cluster multiplier
+                adj_counts[mask_m] = b_data.get("cluster_multiplier", 2.2)
 
         df["adj_fire_count"] = adj_counts
         df["adj_frp_mw"] = adj_frps
@@ -147,81 +149,110 @@ class SeriesHarmonizer:
          sfai_zscore, sfai_alert_lvl)
         """
         logger.info("Aggregating fire events to monthly harmonized series...")
-        df = self.harmonize_event_stream(df)
-
-        group_cols = ["region_id", "year", "month", "biome_id"]
-        if "region_id" not in df.columns:
-            df["region_id"] = "GLOBAL"
-
-        records = []
-        for keys, group in df.groupby(group_cols):
-            reg, yr, mth, biome = keys
-            
-            is_modis = group["instrument"].astype(str).str.upper().str.contains("MODIS")
-            is_viirs = group["instrument"].astype(str).str.upper().str.contains("VIIRS")
-
-            raw_m_count = int(is_modis.sum())
-            raw_v_count = int(is_viirs.sum())
-            raw_frp = float(group["frp"].sum())
-
-            # Harmonized count and FRP logic:
-            # If VIIRS is available (post-2012 with VIIRS coverage), use raw VIIRS.
-            # If only MODIS is available, use sum of event-level scaled FRP (Jensen-free!).
-            if raw_v_count > 0:
-                final_adj_count = raw_v_count
-                final_adj_frp = float(group.loc[is_viirs, "frp"].sum())
-            else:
-                final_adj_count = int(round(group.loc[is_modis, "adj_fire_count"].sum()))
-                final_adj_frp = float(group.loc[is_modis, "adj_frp_mw"].sum())
-
-            records.append({
-                "region_id": str(reg),
-                "year": int(yr),
-                "month": int(mth),
-                "h3_index": "N/A",
-                "biome_id": int(biome),
-                "lat_centroid": float(np.round(group["latitude"].mean(), 4)),
-                "lon_centroid": float(np.round(group["longitude"].mean(), 4)),
-                "raw_modis_count": raw_m_count,
-                "raw_viirs_count": raw_v_count,
-                "raw_frp_mw": float(np.round(raw_frp, 2)),
-                "adj_fire_count": int(final_adj_count),
-                "adj_frp_mw": float(np.round(final_adj_frp, 2)),
-            })
-
-        out_df = pd.DataFrame(records)
-
-        # Compute empirical SFAI Z-scores across campaign distributions
-        if len(out_df) > 1:
-            mean_c = out_df["adj_fire_count"].mean()
-            std_c = out_df["adj_fire_count"].std()
-            std_c = max(std_c, 1.0)
-            out_df["sfai_zscore"] = ((out_df["adj_fire_count"] - mean_c) / std_c).round(2).astype("float32")
+        df = df.copy()
+        if "acq_date" in df.columns:
+            dates = pd.to_datetime(df["acq_date"])
+            df["year"] = dates.dt.year.astype("int16")
+            df["month"] = dates.dt.month.astype("int8")
         else:
-            out_df["sfai_zscore"] = 0.0
+            if "year" not in df.columns:
+                df["year"] = 2023
+            if "month" not in df.columns:
+                df["month"] = 3
+
+        if "biome_id" not in df.columns:
+            df["biome_id"] = 1
+        if "region_id" not in df.columns:
+            df["region_id"] = "INDOCHINA"
+
+        is_modis = df["instrument"].astype(str).str.upper().str.contains("MODIS")
+        is_viirs = ~is_modis
+
+        # Precompute event-level Wooster scaled FRP (Jensen's inequality free)
+        adj_frp_arr = df["frp"].values.copy().astype(float)
+        for b_id, b_data in self.biomes_data.items():
+            mask_m = (is_modis) & (df["biome_id"] == b_id)
+            if mask_m.sum() > 0:
+                m_frp = df.loc[mask_m, "frp"].values
+                adj_frp_arr[mask_m] = np.exp(b_data["beta"]) * (np.maximum(m_frp, 0.1) ** b_data["alpha"])
+
+        df["adj_frp_mw"] = adj_frp_arr
+        df["m_cnt"] = is_modis.astype("int32")
+        df["v_cnt"] = is_viirs.astype("int32")
+        df["m_adj_frp"] = np.where(is_modis, df["adj_frp_mw"], 0.0)
+        df["v_frp"] = np.where(is_viirs, df["frp"].astype(float), 0.0)
+
+        # Fast vectorized groupby aggregation
+        grouped = df.groupby(["region_id", "year", "month", "biome_id"]).agg(
+            lat_centroid=("latitude", "mean"),
+            lon_centroid=("longitude", "mean"),
+            raw_modis_count=("m_cnt", "sum"),
+            raw_viirs_count=("v_cnt", "sum"),
+            raw_frp_mw=("frp", "sum"),
+            m_adj_frp=("m_adj_frp", "sum"),
+            v_frp=("v_frp", "sum"),
+        ).reset_index()
+
+        adj_counts = []
+        adj_frps = []
+
+        for _, row in grouped.iterrows():
+            m_cnt = int(row["raw_modis_count"])
+            v_cnt = int(row["raw_viirs_count"])
+            b_id = int(row["biome_id"])
+            if v_cnt > 0:
+                # Post-2012 era with operational VIIRS: use true VIIRS directly
+                adj_counts.append(v_cnt)
+                adj_frps.append(float(row["v_frp"]))
+            else:
+                # Pre-2012 era (MODIS only): apply Empirical Quantile Mapping
+                calib_cnt = int(round(self.harmonize_count(m_cnt, b_id)))
+                adj_counts.append(calib_cnt)
+                adj_frps.append(float(row["m_adj_frp"]))
+
+        grouped["adj_fire_count"] = adj_counts
+        grouped["adj_frp_mw"] = adj_frps
+        grouped["h3_index"] = "N/A"
+
+        # Compute empirical seasonal SFAI Z-scores across multi-year baseline per calendar month m in [1..12]
+        grouped["sfai_zscore"] = 0.0
+        for mth in range(1, 13):
+            m_mask = grouped["month"] == mth
+            if m_mask.sum() > 1:
+                vals = grouped.loc[m_mask, "adj_fire_count"]
+                m_mean = vals.mean()
+                m_std = max(vals.std(), 1.0)
+                grouped.loc[m_mask, "sfai_zscore"] = ((vals - m_mean) / m_std).round(2).astype("float32")
+            elif m_mask.sum() == 1:
+                grouped.loc[m_mask, "sfai_zscore"] = 0.0
 
         def assign_alert(z):
-            if z > 2.0: return 5  # Emergency
-            if z > 1.0: return 4  # High
-            if z > 0.0: return 3  # Elevated
-            if z > -1.0: return 2 # Normal
+            if z >= 2.0: return 5  # Emergency
+            if z >= 1.0: return 4  # High
+            if z >= 0.5: return 3  # Elevated
+            if z >= -0.5: return 2 # Normal
             return 1              # Minimal
 
-        out_df["sfai_alert_lvl"] = out_df["sfai_zscore"].apply(assign_alert).astype("int8")
-        out_df["year"] = out_df["year"].astype("int16")
-        out_df["month"] = out_df["month"].astype("int8")
-        out_df["biome_id"] = out_df["biome_id"].astype("int8")
-        out_df["adj_fire_count"] = out_df["adj_fire_count"].astype("int32")
-        out_df["raw_modis_count"] = out_df["raw_modis_count"].astype("int32")
-        out_df["raw_viirs_count"] = out_df["raw_viirs_count"].astype("int32")
-        out_df["lat_centroid"] = out_df["lat_centroid"].astype("float32")
-        out_df["lon_centroid"] = out_df["lon_centroid"].astype("float32")
-        out_df["raw_frp_mw"] = out_df["raw_frp_mw"].astype("float32")
-        out_df["adj_frp_mw"] = out_df["adj_frp_mw"].astype("float32")
-        out_df["region_id"] = out_df["region_id"].astype("string")
-        out_df["h3_index"] = out_df["h3_index"].astype("string")
+        grouped["sfai_alert_lvl"] = grouped["sfai_zscore"].apply(assign_alert).astype("int8")
+        grouped["year"] = grouped["year"].astype("int16")
+        grouped["month"] = grouped["month"].astype("int8")
+        grouped["biome_id"] = grouped["biome_id"].astype("int8")
+        grouped["adj_fire_count"] = grouped["adj_fire_count"].astype("int32")
+        grouped["raw_modis_count"] = grouped["raw_modis_count"].astype("int32")
+        grouped["raw_viirs_count"] = grouped["raw_viirs_count"].astype("int32")
+        grouped["lat_centroid"] = grouped["lat_centroid"].round(4).astype("float32")
+        grouped["lon_centroid"] = grouped["lon_centroid"].round(4).astype("float32")
+        grouped["raw_frp_mw"] = grouped["raw_frp_mw"].round(2).astype("float32")
+        grouped["adj_frp_mw"] = grouped["adj_frp_mw"].round(2).astype("float32")
+        grouped["region_id"] = grouped["region_id"].astype("string")
+        grouped["h3_index"] = grouped["h3_index"].astype("string")
 
-        return out_df
+        cols_order = [
+            "region_id", "year", "month", "h3_index", "biome_id",
+            "lat_centroid", "lon_centroid", "raw_modis_count", "raw_viirs_count",
+            "raw_frp_mw", "adj_fire_count", "adj_frp_mw", "sfai_zscore", "sfai_alert_lvl"
+        ]
+        return grouped[cols_order]
 
     def verify_wooster_conservation(self, pairs_df: pd.DataFrame) -> dict:
         """
@@ -260,21 +291,35 @@ class SeriesHarmonizer:
 
     def save_monthly(self, df: pd.DataFrame) -> Path:
         """Save monthly table to parquet"""
+        PROCESSED_CALIBRATED_DIR.mkdir(parents=True, exist_ok=True)
         out_path = PROCESSED_CALIBRATED_DIR / "harmonized_fire_monthly.parquet"
         df.to_parquet(out_path, index=False)
-        logger.info(f"Saved monthly harmonized series to: {out_path}")
+        logger.info(f"Saved monthly harmonized series ({len(df):,} rows) to: {out_path}")
         return out_path
 
 
 def main():
+    parser = argparse.ArgumentParser(description="FireHarmonize Series Harmonization")
+    parser.add_argument("--events", type=str, default=None, help="Path to input events parquet")
+    args = parser.parse_args()
+
     harmonizer = SeriesHarmonizer()
-    events_path = RAW_FIRMS_DIR / "GLOBAL_5_REGIONS_clean_fire_events.parquet"
+    if args.events:
+        events_path = Path(args.events)
+    else:
+        # Prefer master 25-year consolidated archive
+        master_path = RAW_FIRMS_DIR / "INDOCHINA_25YR_master_clean_events.parquet"
+        if master_path.exists():
+            events_path = master_path
+        else:
+            events_path = RAW_FIRMS_DIR / "GLOBAL_5_REGIONS_clean_fire_events.parquet"
+
     logger.info(f"Loading raw fire events: {events_path}")
     events_df = pd.read_parquet(events_path)
 
     monthly_df = harmonizer.aggregate_monthly_harmonized(events_df)
     harmonizer.save_monthly(monthly_df)
-    print("Done aggregating monthly series!")
+    print(f"Done aggregating monthly series: {len(monthly_df)} rows successfully written!")
 
 
 if __name__ == "__main__":

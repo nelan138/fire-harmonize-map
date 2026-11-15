@@ -7,6 +7,7 @@
          :options="{ minZoom: 1, maxZoom: 8, worldCopyJump: true }"
          class="isolate h-full w-full"
          @ready="map = $event"
+         @click="circleAreaStore.clickedLocation = $event.latlng"
       >
          <div
             class="w-full flex flex-col items-center absolute z-1000 p-4"
@@ -45,6 +46,7 @@
 <script setup lang="ts">
 import type { Map } from "leaflet";
 
+const circleAreaStore = useCircleAreaStore();
 const map = shallowRef<Map>();
 const coordinates = ref("");
 const searchFocused = ref(false);

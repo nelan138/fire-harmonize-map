@@ -1,27 +1,7 @@
 <template>
-   <div class="overflow-x-auto">
-      <UAlert
-         v-if="loadError"
-         role="alert"
-         color="error"
-         variant="subtle"
-         icon="i-lucide-circle-alert"
-         title="Unable to load fire activities"
-         :description="loadError"
-      >
-         <template #actions>
-            <UButton
-               label="Retry"
-               variant="outline"
-               :loading="loading"
-               @click="loadFireMonthly"
-            />
-         </template>
-      </UAlert>
-
+   <div class="max-w-full overflow-x-auto overscroll-x-contain p-1">
       <div
-         v-else
-         class="grid w-fit items-center gap-2"
+         class="grid w-max items-center gap-2"
          :style="{
             gridTemplateColumns: `max-content repeat(${xAxis.length}, 2.5rem)`,
          }"
@@ -44,9 +24,12 @@
             <HeatmapGrid
                v-for="grid in grids"
                :key="grid.key"
-               :value="grid.value"
                :color="grid.color"
                :tooltip="grid.tooltip"
+               :label="grid.label"
+               :selected="!!grid.fireMonth && grid.fireMonth.key === selectedKey"
+               :disabled="!grid.fireMonth"
+               @select="grid.fireMonth && emit('select', grid.fireMonth.key)"
             />
          </template>
       </div>
@@ -54,16 +37,18 @@
 </template>
 
 <script lang="ts" setup>
-type ValidValue = string | number;
+import type { FireMonth } from "../utils/getSelectedFireMonth";
 
-const fireMonthlyStore = useFireMonthlyStore();
-const { fireActivities } = storeToRefs(fireMonthlyStore);
+const { months, selectedKey = null } = defineProps<{
+   months: FireMonth[];
+   selectedKey?: string | null;
+}>();
+const emit = defineEmits<{ select: [key: string] }>();
 
 const xAxis = computed(() =>
-   [...new Set((fireActivities.value ?? []).map((activity) => activity.year))]
-      .sort((a, b) => a - b),
+   [...new Set(months.map(({ year }) => year))].sort((a, b) => a - b),
 );
-const yAxis = shallowRef<ValidValue[]>([
+const yAxis = [
    "January",
    "February",
    "March",
@@ -76,52 +61,47 @@ const yAxis = shallowRef<ValidValue[]>([
    "October",
    "November",
    "December",
-]);
-
-const loadError = ref<string | null>(null);
-const loading = ref(false);
-
-async function loadFireMonthly() {
-   loading.value = true;
-   const [, error] = await tryCatch(fireMonthlyStore.loadFireMonthly());
-   loadError.value = error?.message ?? null;
-   loading.value = false;
-}
-
-onMounted(loadFireMonthly);
+];
 
 type HeatmapGrid = {
    key: string;
-   value?: ValidValue;
    color: HeatmapGridColor;
    tooltip?: string;
-   filterValue?: ValidValue;
+   label: string;
+   fireMonth?: FireMonth;
 };
 
 const gridMatrix = computed<HeatmapGrid[][]>(() => {
-   const activitiesByPosition = new Map(
-      (fireActivities.value ?? []).map((activity) => [
-         `${activity.month}:${activity.year}`,
-         activity,
-      ]),
+   const monthsByPosition = new Map(
+      months.map((month) => [`${month.month}:${month.year}`, month]),
    );
 
-   return yAxis.value.map((_, y) =>
+   return yAxis.map((monthLabel, y) =>
       xAxis.value.map((year, x) => {
-         const activity = activitiesByPosition.get(`${y + 1}:${year}`);
+         const fireMonth = monthsByPosition.get(`${y + 1}:${year}`);
+         const rows = fireMonth?.rows ?? [];
+         const level = rows.reduce(
+            (highest, { sfai_alert_lvl }) =>
+               sfai_alert_lvl !== null && getAlertLevelColor(sfai_alert_lvl) !== "gray"
+                  ? Math.max(highest, sfai_alert_lvl)
+                  : highest,
+            0,
+         );
+         const count = fireMonth?.totals.fireCount?.toLocaleString("en") ?? "Unavailable";
+         const alert = level
+            ? `${rows.length > 1 ? "Highest record alert" : "Alert level"}: ${level}`
+            : "Alert level unavailable";
 
          return {
             key: `${y}:${x}`,
-            color: activity
-               ? getAlertLevelColor(activity.sfai_alert_lvl)
-               : "gray",
-            tooltip: activity
-               ? `Fire Count: ${activity.adj_fire_count}\nAlert Level: ${activity.sfai_alert_lvl}`
-               : undefined,
+            fireMonth,
+            label: fireMonth
+               ? `${fireMonth.regionId.replaceAll("_", " ")}, ${monthLabel} ${year}`
+               : `${monthLabel} ${year}: no monthly data`,
+            color: level ? getAlertLevelColor(level) : fireMonth ? "neutral" : "gray",
+            tooltip: fireMonth ? `Regional Fire Count: ${count}\n${alert}` : undefined,
          };
       }),
    );
 });
-
-
 </script>
