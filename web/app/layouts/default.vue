@@ -1,6 +1,6 @@
 <template>
    <div>
-      <UHeader :ui="{ container: 'max-w-none px-0 sm:px-0 lg:px-4' }">
+      <UHeader :ui="{ container: 'max-w-none px-0 sm:px-0 lg:px-4', toggle: 'me-0' }">
          <template #left>
             <div class="flex gap-8">
                <UButton
@@ -28,11 +28,9 @@
             <slot />
          </div>
       </UMain>
-
-      <!-- <UFooter /> -->
    </div>
 </template>
 
 <script setup lang="ts">
-const open = ref(true);
+const open = ref(false);
 </script>

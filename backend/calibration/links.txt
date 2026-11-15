@@ -1,6 +1,0 @@
-Aqua MODIS: https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-1A/Aqua-MODIS/
-VIIRS:
-- NOAA20: https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-1A/NOAA20-VIIRS/
-- NOAA21: https://oceandata.sci.gsfc.nasa.gov/directdataaccess/Level-1A/NOAA21-VIIRS/ (each has /2026/ and /2026/DD-MMM-YYYY for example /2026/28-Jan-2026/ containing a lot of .nc files)
-
-Possible VIRRS alternative because above links need login: https://noaa-nesdis-n21-pds.s3.amazonaws.com/index.html
