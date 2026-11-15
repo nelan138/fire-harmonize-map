@@ -172,14 +172,6 @@ const diagnosisCards = computed(() => {
       });
    }
 
-   if (!printBrief) {
-      cards.push({
-         label: "Oceanic Niño Index",
-         value: "+1.2 °C",
-         detail: "El Niño (placeholder)",
-      });
-   }
-
    return cards;
 });
 </script>
