@@ -4,53 +4,93 @@
       <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold font-mono">1</span>
       <div>
         <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">
-          Nghịch Lý Đứt Gãy Cảm Biến Vệ Tinh 2012 (The Great Sensor Fracture)
+          {{ expertMode ? 'Optical Physics & The 2012 Satellite Sensor Fracture' : 'The Optical Illusion: Why Satellites Suddenly Saw 4x More Fires in 2012' }}
         </h2>
         <p class="text-xs sm:text-sm text-slate-400">
-          Vì sao việc đổi vệ tinh khiến số điểm cháy toàn cầu nhảy vọt gấp 4 lần nếu không có FireHarmonize?
+          {{ expertMode ? 'Pixel dilation geometry, sub-pixel thermal sensitivity, and empirical overpass resolution disparities' : 'How upgrading satellite cameras created the illusion of a sudden global wildfire explosion' }}
         </p>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      <!-- Left Column: Explanation & Analogy -->
+      <!-- Left Column: Explanation (Dynamic by Track) -->
       <div class="lg:col-span-6 space-y-4 text-slate-300 text-sm leading-relaxed">
-        <p>
-          Vào cuối năm 2011, NASA phóng vệ tinh Suomi-NPP mang cảm biến <strong class="text-white">VIIRS</strong> để kế thừa cảm biến tiền nhiệm <strong class="text-white">MODIS</strong> (trên vệ tinh Terra &amp; Aqua). Bước nhảy vọt về quang học đã tạo ra một sự thiên lệch thị giác khổng lồ:
-        </p>
+        <!-- GENERAL TRACK EXPLANATION -->
+        <div v-if="!expertMode" class="space-y-4">
+          <p>
+            In late 2011, NASA upgraded its main fire-tracking satellites from an older camera (<strong class="text-white">MODIS</strong>) to a sharp modern camera (<strong class="text-white">VIIRS</strong>). This technology jump immediately created an optical illusion:
+          </p>
 
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 font-mono text-xs sm:text-sm space-y-2">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span class="text-slate-400">Cảm biến MODIS (Aqua/Terra):</span>
-            <span class="text-amber-300 font-bold">1,000 m &times; 1,000 m = 1.00 km&sup2;</span>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-slate-400 font-medium">Old Satellite (MODIS, 2000–2011):</span>
+              <span class="text-amber-300 font-bold font-mono">1 km &times; 1 km box (1.00 km&sup2;)</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-slate-400 font-medium">New Satellite (VIIRS, 2012–Present):</span>
+              <span class="text-teal-300 font-bold font-mono">375 m &times; 375 m box (0.14 km&sup2;)</span>
+            </div>
+            <div class="flex items-center justify-between text-rose-400 font-semibold pt-1">
+              <span>Magnification Difference:</span>
+              <span>MODIS pixel is 7 times larger!</span>
+            </div>
           </div>
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span class="text-slate-400">Cảm biến VIIRS (Suomi-NPP):</span>
-            <span class="text-teal-300 font-bold">375 m &times; 375 m = 0.14 km&sup2;</span>
+
+          <!-- Highlight Analogy Card -->
+          <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
+            <div class="font-bold text-emerald-300 flex items-center gap-2">
+              <UIcon name="i-lucide-lightbulb" class="w-4 h-4 text-amber-400 shrink-0" />
+              <span>The 1 Megapixel vs 8 Megapixel Camera Analogy</span>
+            </div>
+            <p class="text-slate-300">
+              Imagine taking a photo of a forested hill with a grainy <strong>1 Megapixel flip phone (MODIS)</strong>. Small campfires or farm burns are invisible—they blend into the cold green background.
+            </p>
+            <p class="text-slate-300">
+              Then you switch to a modern <strong>8 Megapixel smartphone (VIIRS)</strong>. Suddenly, you can clearly see dozens of tiny smoke plumes and campfires under the trees.
+            </p>
+            <p class="text-slate-300 font-medium">
+              The fire counter jumps by 300% to 500%, but <em class="text-amber-200">the forest did not burn any more than before</em>—<em class="text-emerald-200">your camera lens is simply 7 times sharper</em>!
+            </p>
           </div>
-          <div class="flex items-center justify-between text-rose-400 font-bold pt-1">
-            <span>Tỷ lệ diện tích điểm ảnh:</span>
-            <span>MODIS lớn gấp 7.11&times; so với VIIRS!</span>
-          </div>
+
+          <p class="text-xs text-slate-400">
+            <strong>Why This Matters:</strong> Without FireHarmonize, climate charts show an artificial 2012 jump, misleading policy makers into thinking global warming caused fires to quadruple in a single year.
+          </p>
         </div>
 
-        <p>
-          Do điểm ảnh nhỏ hơn 7 lần kết hợp thuật toán kênh nhiệt $I_4$ ($3.74\,\mu\text{m}$) có độ nhạy vượt trội,
-          VIIRS phát hiện được các đám cháy nhỏ dưới $100\,\text{m}^2$ (như dọn nương rẫy, đốt rơm rạ mùa khô) mà MODIS coi là nền đen bình thường.
-        </p>
+        <!-- SCIENTIFIC DEEP DIVE EXPLANATION -->
+        <div v-else class="space-y-4">
+          <p>
+            The transition from EOS MODIS (Terra/Aqua) to S-NPP/JPSS VIIRS represents a major architectural shift in spaceborne radiometric sounding, as characterized by <a href="https://doi.org/10.1016/j.rse.2013.12.008" target="_blank" class="text-emerald-400 hover:underline font-medium">Schroeder et al. (2014)</a> and <a href="https://doi.org/10.1016/j.rse.2016.02.054" target="_blank" class="text-emerald-400 hover:underline font-medium">Giglio et al. (2016)</a>:
+          </p>
 
-        <!-- Beginner Analogy Card -->
-        <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-xs sm:text-sm space-y-2">
-          <div class="font-bold text-emerald-300 flex items-center gap-2">
-            <UIcon name="i-lucide-lightbulb" class="w-4 h-4 text-amber-400" />
-            <span>Dành Cho Mọi Người: Ẩn Dụ Về Chiếc Điện Thoại 1 MP vs 8 MP</span>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 font-mono text-xs space-y-2">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-slate-400">MODIS Ground Sample Distance:</span>
+              <span class="text-amber-300 font-bold">1.0 km nadir &rarr; 9.7 km&sup2; at 55&deg; scan edge</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-slate-400">VIIRS Ground Sample Distance:</span>
+              <span class="text-teal-300 font-bold">375 m nadir &rarr; 0.60 km&sup2; via sample aggregation</span>
+            </div>
+            <div class="flex items-center justify-between text-rose-400 font-bold pt-1">
+              <span>Pixel Area Expansion Factor:</span>
+              <span>A<sub>MODIS</sub> / A<sub>VIIRS</sub> &approx; 7.11&times; (Nadir)</span>
+            </div>
           </div>
-          <p class="text-slate-300">
-            Hãy tưởng tượng bạn chụp ảnh sườn đồi bằng chiếc điện thoại cũ <strong>1 Megapixel (MODIS)</strong>, sau đó đổi sang điện thoại mới <strong>8 Megapixel (VIIRS)</strong>. Bức ảnh mới sắc nét hơn gấp 7 lần và nhìn rõ từng đốm lửa nhỏ li ti dưới tán cây.
-          </p>
-          <p class="text-slate-300 font-medium">
-            Số đốm lửa đếm được nhảy vọt gấp 3–5 lần, nhưng <em class="text-amber-200">ngọn đồi không hề cháy nhiều hơn</em>, chỉ vì <em class="text-emerald-200">ống kính của bạn nhạy hơn</em>! FireHarmonize chế tạo "bộ quy đổi quang học" để chuỗi 25 năm liền mạch như thể được chụp bằng cùng một chiếc máy ảnh.
-          </p>
+
+          <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-2">
+            <div class="font-bold text-emerald-400 flex items-center gap-1.5 font-mono">
+              <UIcon name="i-lucide-binary" class="w-4 h-4 shrink-0" />
+              <span>Sub-Pixel Thermal Physics &amp; I-Band Radiance</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              VIIRS utilizes high-resolution imagery band <strong class="text-white">I4 (3.55–3.93 &mu;m)</strong> with a 375 m footprint. Because pixel background area is 7.11&times; smaller, small sub-pixel flaming fronts (&lt; 100 m&sup2;) generate sufficient brightness temperature elevations (&Delta;T<sub>41</sub> &gt; 10 K) above background noise without being diluted by surrounding unburned forest canopy.
+            </p>
+            <p class="text-slate-300 leading-relaxed font-mono text-[11px] text-slate-400">
+              Bowtie Distortion: &Delta;x<sub>along-scan</sub>(&theta;) = h &middot; sec&sup2;(&theta;) &middot; &Delta;&beta; &mdash; VIIRS constrains scan-angle dilation via 3:1 sample aggregation, whereas MODIS expands up to 10-fold across track.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -59,7 +99,7 @@
         <div class="flex items-center justify-between text-xs font-mono">
           <span class="flex items-center gap-1.5 text-amber-400 font-semibold">
             <UIcon name="i-lucide-eye" class="w-4 h-4" />
-            <span>&larr; Kéo sang Trái: MODIS Aqua 1 km</span>
+            <span>&larr; Drag Left: MODIS Aqua 1 km</span>
           </span>
           <span class="flex items-center gap-1.5 text-teal-400 font-semibold">
             <span>VIIRS SNPP 375 m &rarr;</span>
@@ -103,15 +143,15 @@
 
           <!-- Overlay Badge Labels -->
           <div class="absolute bottom-3 left-3 z-30 px-2.5 py-1 rounded-md bg-slate-950/80 backdrop-blur-sm border border-slate-700 text-[11px] font-mono text-amber-300">
-            MODIS Aqua 1 km (15/03/2023)
+            MODIS Aqua 1 km (2023-03-15)
           </div>
           <div class="absolute bottom-3 right-3 z-30 px-2.5 py-1 rounded-md bg-slate-950/80 backdrop-blur-sm border border-slate-700 text-[11px] font-mono text-teal-300">
-            VIIRS S-NPP 375 m (15/03/2023)
+            VIIRS S-NPP 375 m (2023-03-15)
           </div>
         </div>
 
         <p class="text-xs text-slate-400 text-center italic">
-          Quan trắc cùng lúc tại Tây Nguyên ngày 15/03/2023: Kéo thanh trượt để đối chiếu sự khác biệt giữa điểm ảnh 1 km và 375 m.
+          {{ expertMode ? 'Coincident afternoon overpass (March 15, 2023, Central Highlands Vietnam). Note sub-pixel fire clustering resolved only in VIIRS.' : 'Real satellite observation over Vietnam on March 15, 2023. Drag the slider to see how blurry 1 km squares resolve into sharp 375 m pinpoints.' }}
         </p>
       </div>
     </div>
@@ -119,6 +159,10 @@
 </template>
 
 <script setup lang="ts">
+defineProps<{
+  expertMode?: boolean;
+}>();
+
 const sliderContainer = ref<HTMLElement | null>(null);
 const sliderPos = ref(50);
 const containerWidth = ref(0);
@@ -158,11 +202,9 @@ const stopDragging = () => {
 
 const startDragging = (e: MouseEvent | TouchEvent) => {
   isDragging = true;
-  if ('touches' in e && e.touches[0]) {
-    handleMove(e.touches[0].clientX);
-  } else if ('clientX' in e) {
-    handleMove(e.clientX);
-  }
+  const clientX = 'touches' in e && e.touches[0] ? e.touches[0].clientX : (e as MouseEvent).clientX;
+  handleMove(clientX);
+
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mouseup', stopDragging);
   window.addEventListener('touchmove', onTouchMove);
@@ -175,7 +217,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateWidth);
   stopDragging();
+  window.removeEventListener('resize', updateWidth);
 });
 </script>

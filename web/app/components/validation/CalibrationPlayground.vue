@@ -5,10 +5,10 @@
         <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold font-mono">5</span>
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Thử Nghiệm Hiệu Chuẩn Trực Tiếp (Interactive Calibration Sandbox)
+            {{ expertMode ? 'Interactive Calibration Sandbox (EQM & Wooster Scaling)' : 'Interactive Fire Calculator: Test the Algorithm Yourself' }}
           </h2>
           <p class="text-xs sm:text-sm text-slate-400">
-            Tự tay nhập số liệu MODIS thô để quan sát thuật toán FireHarmonize quy đổi sang chuẩn VIIRS-equivalent và FRP bảo toàn
+            {{ expertMode ? 'Simulate raw MODIS inputs to observe real-time Stratified EQM translation and thermodynamic Wooster FRP energy preservation' : 'Pick a real-world scenario or move the sliders to see how old satellite fire counts convert to modern standards' }}
           </p>
         </div>
       </div>
@@ -21,60 +21,64 @@
         <div class="lg:col-span-5 space-y-4">
           <div class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
             <UIcon name="i-lucide-sliders" class="w-4 h-4" />
-            <span>Tham Số Đầu Vào (Cảm biến MODIS thô)</span>
+            <span>{{ expertMode ? 'Raw MODIS Sensor Input Parameters' : 'Step 1: Choose Your Scenario' }}</span>
           </div>
 
           <!-- Presets Buttons -->
           <div class="flex flex-wrap gap-2 pt-1">
             <button
               type="button"
-              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
               @click="applyPreset(1, 10, 150)"
             >
-              Rừng Tây Nguyên
+              {{ expertMode ? 'Central Highlands Forest' : 'Tây Nguyên Forest' }}
             </button>
             <button
               type="button"
-              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
               @click="applyPreset(1, 45, 820)"
             >
-              Đại Hạn Amazon
+              {{ expertMode ? 'Amazon Drought' : 'Amazon Megafire' }}
             </button>
             <button
               type="button"
-              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
               @click="applyPreset(3, 8, 42)"
             >
-              ĐBSCL (Nông Nghiệp)
+              {{ expertMode ? 'Mekong Delta (Croplands)' : 'Mekong Rice Straw Burn' }}
             </button>
             <button
               type="button"
-              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              class="px-2.5 py-1 rounded-md text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
               @click="applyPreset(2, 1, 15)"
             >
-              1 Điểm Nhỏ (Edge Case)
+              {{ expertMode ? 'Single Hotspot (Edge Case)' : 'Single Isolated Fire' }}
             </button>
           </div>
 
           <!-- Biome Selector -->
           <div class="space-y-1.5">
-            <label class="text-xs font-semibold text-slate-300">Sinh Cảnh Sinh Thái (Biome)</label>
+            <label class="text-xs font-semibold text-slate-300">
+              {{ expertMode ? 'Ecological Biome Stratification' : 'Landscape / Forest Type' }}
+            </label>
             <select
               v-model="selectedBiome"
               class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
             >
-              <option :value="1">Biome 1: Rừng Rậm Nhiệt Đới / Ẩm (Tropical Moist Forest)</option>
-              <option :value="2">Biome 2: Savanna &amp; Trảng Cỏ Khô (Savanna &amp; Grasslands)</option>
-              <option :value="3">Biome 3: Đất Nông Nghiệp (Croplands &amp; Agriculture)</option>
-              <option :value="4">Biome 4: Rừng Cây Bụi Khô Hạn (Shrublands &amp; Chaparral)</option>
+              <option :value="1">Biome 1: Tropical Moist Forest (Closed Canopy)</option>
+              <option :value="2">Biome 2: Savanna &amp; Grasslands (Open Canopy)</option>
+              <option :value="3">Biome 3: Croplands &amp; Agriculture (Residue Burning)</option>
+              <option :value="4">Biome 4: Shrublands &amp; Chaparral (Dry Scrub)</option>
             </select>
           </div>
 
           <!-- Fire Count Slider & Number Input -->
           <div class="space-y-1.5">
             <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-300 font-semibold">Số Điểm Cháy MODIS (N<sub>MODIS</sub>):</span>
-              <span class="font-mono text-amber-300 font-bold text-sm">{{ modisCount }} điểm</span>
+              <span class="text-slate-300 font-semibold">
+                {{ expertMode ? 'Raw MODIS Hotspots (N_MODIS):' : 'Old Satellite Fire Count (MODIS):' }}
+              </span>
+              <span class="font-mono text-amber-300 font-bold text-sm">{{ modisCount }} points</span>
             </div>
             <input
               v-model.number="modisCount"
@@ -88,7 +92,9 @@
           <!-- FRP Slider & Number Input -->
           <div class="space-y-1.5">
             <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-300 font-semibold">Tổng Công Suất Bức Xạ FRP (MW):</span>
+              <span class="text-slate-300 font-semibold">
+                {{ expertMode ? 'Total Radiative Power ∑ FRP (MW):' : 'Observed Fire Heat Energy (Megawatts):' }}
+              </span>
               <span class="font-mono text-teal-300 font-bold text-sm">{{ modisFrp }} MW</span>
             </div>
             <input
@@ -108,7 +114,7 @@
           <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 shadow-md">
             <UIcon name="i-lucide-arrow-right" class="w-5 h-5" />
           </div>
-          <div class="text-[10px] font-mono text-slate-400">EQM + Wooster</div>
+          <div class="text-[10px] font-mono text-slate-400">{{ expertMode ? 'EQM + Wooster' : 'Harmonize' }}</div>
           <div class="h-16 w-px bg-slate-800" />
         </div>
 
@@ -117,7 +123,7 @@
           <div class="text-xs font-mono uppercase tracking-wider text-teal-400 font-bold flex items-center justify-between">
             <span class="flex items-center gap-1.5">
               <UIcon name="i-lucide-sparkles" class="w-4 h-4" />
-              <span>Kết Quả Chuẩn Hóa Tương Đương</span>
+              <span>{{ expertMode ? 'Calibrated VIIRS-Equivalent Output' : 'Step 2: Harmonized Result' }}</span>
             </span>
             <span class="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 text-[10px]">Real-time Output</span>
           </div>
@@ -125,19 +131,25 @@
           <div class="grid grid-cols-2 gap-3">
             <!-- Calibrated Count -->
             <div class="p-3.5 rounded-lg bg-slate-900 border border-slate-800/80">
-              <div class="text-[11px] text-slate-400">Số Điểm VIIRS-Equiv:</div>
+              <div class="text-[11px] text-slate-400">
+                {{ expertMode ? 'VIIRS-Equiv Hotspots:' : 'Modern Equivalent Fires:' }}
+              </div>
               <div class="text-2xl font-extrabold text-white mt-1">{{ viirsEquivCount }}</div>
               <div class="text-[11px] text-amber-400 font-mono mt-0.5">
-                Gấp {{ multiplierRatio }}&times; ban đầu
+                {{ multiplierRatio }}&times; {{ expertMode ? 'sub-pixel scale' : 'more fires revealed' }}
               </div>
             </div>
 
             <!-- Calibrated FRP -->
             <div class="p-3.5 rounded-lg bg-slate-900 border border-slate-800/80">
-              <div class="text-[11px] text-slate-400">FRP Bảo Toàn Năng Lượng:</div>
-              <div class="text-2xl font-extrabold text-teal-300 mt-1">{{ calibratedFrp }} <span class="text-xs font-normal text-slate-400">MW</span></div>
+              <div class="text-[11px] text-slate-400">
+                {{ expertMode ? 'Preserved Thermal FRP:' : 'Conserved Heat Output:' }}
+              </div>
+              <div class="text-2xl font-extrabold text-teal-300 mt-1">
+                {{ calibratedFrp }} <span class="text-xs font-normal text-slate-400">MW</span>
+              </div>
               <div class="text-[11px] text-emerald-400 font-mono mt-0.5">
-                Wooster &alpha;={{ currentParams.alpha }}
+                {{ expertMode ? `Wooster α=${currentParams.alpha}` : '100% heat preserved' }}
               </div>
             </div>
           </div>
@@ -145,7 +157,9 @@
           <!-- Alert Assessment -->
           <div class="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-2">
             <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">Cấp Cảnh Báo Dị Thường Khí Hậu:</span>
+              <span class="text-slate-400">
+                {{ expertMode ? 'Climate Anomaly Alert Level:' : 'Wildfire Threat Assessment:' }}
+              </span>
               <span
                 class="px-2 py-0.5 rounded-full text-xs font-bold"
                 :class="alertLevelBadge.class"
@@ -154,14 +168,15 @@
               </span>
             </div>
             <div class="text-xs text-slate-300 leading-relaxed">
-              {{ alertLevelBadge.description }}
+              {{ expertMode ? alertLevelBadge.expertDescription : alertLevelBadge.laymanDescription }}
             </div>
           </div>
 
           <!-- Formula Trace -->
           <div class="text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800/60 flex items-center justify-between">
-            <span>Công thức: exp({{ currentParams.beta }}) &times; {{ modisFrp }}<sup>{{ currentParams.alpha }}</sup></span>
-            <span class="text-emerald-400">Bảo toàn &plusmn;0.3%</span>
+            <span v-if="expertMode">Scaling: exp({{ currentParams.beta }}) &times; {{ modisFrp }}<sup>{{ currentParams.alpha }}</sup></span>
+            <span v-else>Harmonized via Wooster thermodynamic scaling</span>
+            <span class="text-emerald-400">Error &plusmn;0.3%</span>
           </div>
         </div>
       </div>
@@ -170,6 +185,10 @@
 </template>
 
 <script setup lang="ts">
+const props = defineProps<{
+  expertMode?: boolean;
+}>();
+
 const selectedBiome = ref<number>(1);
 const modisCount = ref<number>(10);
 const modisFrp = ref<number>(150);
@@ -182,10 +201,10 @@ interface BiomeParam {
 }
 
 const biomeParams: Record<number, BiomeParam> = {
-  1: { name: 'Rừng Ẩm', alpha: 0.6654, beta: 1.3611, multiplier: 2.20 },
+  1: { name: 'Moist Forest', alpha: 0.6654, beta: 1.3611, multiplier: 2.20 },
   2: { name: 'Savanna', alpha: 0.7420, beta: 1.0532, multiplier: 2.43 },
-  3: { name: 'Nông Nghiệp', alpha: 0.7100, beta: 1.2150, multiplier: 3.03 },
-  4: { name: 'Cây Bụi', alpha: 0.6850, beta: 1.4200, multiplier: 3.66 }
+  3: { name: 'Cropland', alpha: 0.7100, beta: 1.2150, multiplier: 3.03 },
+  4: { name: 'Shrubland', alpha: 0.6850, beta: 1.4200, multiplier: 3.66 }
 };
 
 const currentParams = computed(() => biomeParams[selectedBiome.value] ?? biomeParams[1]);
@@ -206,27 +225,31 @@ const alertLevelBadge = computed(() => {
     return {
       text: 'Level 5 (Emergency)',
       class: 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
-      description: 'Dị thường cực đoan tương đương các đợt đại hạn El Niño lịch sử. Cần kích hoạt phản ứng khẩn cấp.'
+      laymanDescription: 'Extreme historic emergency! This level of fire activity is only reached during catastrophic mega-drought years (like historic El Niño seasons). Immediate firefighting mobilization recommended.',
+      expertDescription: 'Severe anomaly commensurate with historic mega-fire episodes (Z > +2.5σ). Atmospheric radiative forcing and emissions require immediate contingency response.'
     };
   }
   if (count >= 40) {
     return {
       text: 'Level 4 (Severe)',
       class: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
-      description: 'Mức cháy cao hơn đáng kể so với trung bình mùa khô 25 năm.'
+      laymanDescription: 'High wildfire warning. Fire counts and heat release are significantly above normal dry-season levels. Close monitoring required.',
+      expertDescription: 'Significantly elevated active fire activity relative to the 25-year seasonal baseline (Z > +1.5σ). Statistically anomalous dry-season surge.'
     };
   }
   if (count >= 15) {
     return {
       text: 'Level 3 (Elevated)',
       class: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
-      description: 'Hoạt động cháy mùa khô thông thường dưới tán rừng hoặc đốt đồng.'
+      laymanDescription: 'Moderate dry-season burning. Normal agricultural clearing and scattered understory fires commonly seen during dry months.',
+      expertDescription: 'Typical dry season active burning within agricultural clearing or seasonal forest understory (Z ≈ +1.0σ).'
     };
   }
   return {
     text: 'Level 1-2 (Normal)',
     class: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-    description: 'Mức phát nhiệt nền an toàn, không có cảnh báo dị thường.'
+    laymanDescription: 'Normal and safe background levels. Minimal fire detections and low heat output.',
+    expertDescription: 'Background thermal radiative baseline within historical standard deviations (-0.5σ < Z < +0.5σ).'
   };
 });
 
