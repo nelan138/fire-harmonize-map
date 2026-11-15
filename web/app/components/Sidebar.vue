@@ -36,19 +36,9 @@ const items: NavigationMenuItem[] = [
       to: "/activities",
    },
    {
-      label: "SFAI Anomaly Diagnostics",
-      icon: "lucide:flame",
-      to: "/diagnostics",
-   },
-   {
       label: "Scientific Validation",
       icon: "lucide:shield-check",
       to: "/validation",
-   },
-   {
-      label: "Debug",
-      icon: "lucide:bug",
-      to: "/debug",
    },
 ];
 </script>
