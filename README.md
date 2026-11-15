@@ -1,45 +1,69 @@
 # Fire Harmonize Map
 
-A Nuxt web app for exploring NASA fire detections and comparing regional fire activity across years. The map opens over Indochina.
+A web app for viewing NASA fire detections and monthly fire activity in Indochina.
 
 ## Run locally
 
-Use Node.js 24.15.0 or newer in the 24.x series. From the repository root, switch to `web/` to install dependencies and start Nuxt.
+Use Node.js 24.15.0 or newer in the 24.x series and run these commands from the repository root.
 
 ```bash
 cd web
-npm ci
+npm install
 npm run dev
 ```
 
 Open [localhost:3000](http://localhost:3000). No `.env` file is required.
 
-## Explore fire activity
+Internet access is required for the NASA map tiles and the [Parquet files on Hugging Face](https://huggingface.co/datasets/leveluplevelyn/fire_event_nasaspaceapps) that DuckDB queries.
 
-- **Interactive map (`/map`)**. Enter latitude and longitude to move the map. Click near a detection to inspect loaded fire events within 20 km. The map API currently returns up to 1,000 Indochina detections.
-- **Burning activity calendar (`/activities`)**. Select a fire area on the map, then open the calendar. Each cell shows the regional fire count on hover and uses the highest recorded alert for its color. Select a month to see regional counts, historical change, and SFAI scores and alerts for the source records.
-- **Monthly analysis**. Compare the selected month with the same calendar month across available years in the 2000–2024 baseline. View each biome’s share of harmonized detections and fire radiative power, and compare raw MODIS, raw VIIRS, and harmonized counts.
-- **Print or save a brief**. Use **Print / Export PDF** in the sensor comparison card to open a one-page A4 brief. Choose **Save as PDF** in the browser’s print dialog.
+## Generate anomaly diagnostics for Member C
 
-The calendar’s Oceanic Niño Index (ONI) card currently displays a placeholder.
-
-## Data sources
-
-The app needs internet access for NASA GIBS map tiles and the [Parquet dataset on Hugging Face](https://huggingface.co/datasets/leveluplevelyn/fire_event_nasaspaceapps). The Nuxt server queries the dataset with DuckDB.
-
-| Endpoint | Parquet file |
-| --- | --- |
-| `/api/fire-events` | `GLOBAL_5_REGIONS_clean_fire_events.parquet` |
-| `/api/fire-monthly` | `harmonized_fire_monthly.parquet` |
-
-Use `NUXT_FIRE_DATA_BASE_URL` to override the dataset base URL. The monthly endpoint accepts an optional region filter such as `/api/fire-monthly?regions=INDOCHINA`.
-
-## Test and build
-
-Run these commands from `web/`.
-
-```bash
-npm test
-npm run build
-node .output/server/index.mjs
+```powershell
+npm.cmd run anomaly:parquet
 ```
+
+It writes `web/public/data/anomaly_diagnostics.csv`. Pass `--region all` to
+include all regions in the Parquet, or `--region INDOCHINA` to select one.
+Use `--parquet "C:\path\to\harmonized_fire_monthly.parquet"` or
+`--out "C:\path\to\diagnostics.csv"` to override the input or output path.
+
+### CSV fields and query example
+
+Each row is keyed by `region_id`, `h3_index`, `biome_id`, `month`, and `year`.
+Fields are grouped by purpose:
+
+- Location and time: `region_id`, `h3_index`, `year`, `month`, `biome_id`,
+  `selected_date`, `lat_centroid`, `lon_centroid`, `spatial_resolution`.
+- Source measurements: `raw_modis_count`, `raw_viirs_count`,
+  `adj_fire_count`, `adj_frp_mw`.
+- SFAI: `sfai_baseline_start_year`, `sfai_baseline_end_year`,
+  `sfai_baseline_year_count`, `sfai_baseline_years`,
+  `sfai_historical_mean`, `sfai_historical_std`, `sfai_z_score`,
+  `sfai_alert_level`, `sfai_alert_color_hex`, `sfai_status`.
+- Chow test: `chow_break_year`, `chow_pre_year_count`,
+  `chow_post_year_count`, `chow_f_stat`, `chow_p_value`,
+  `chow_df_numerator`, `chow_df_denominator`, `chow_status`,
+  `chow_no_significant_break_detected`, `chow_verdict`.
+- Climate: `oni_index`, `enso_phase`, `enso_explanation`.
+
+For example, DuckDB can read the CSV directly:
+
+```sql
+SELECT year, month, biome_id, adj_fire_count,
+       sfai_z_score, sfai_alert_level, sfai_status,
+       chow_p_value, chow_status, oni_index, enso_phase
+FROM read_csv_auto('public/data/anomaly_diagnostics.csv', header = true)
+WHERE region_id = 'INDOCHINA' AND year = 2024 AND month = 4;
+```
+
+SFAI compares each row with earlier years for the same region/location,
+biome, and calendar month. The 2012 Chow result uses the full available series
+for that same group, so its fields repeat across years. Climate fields are
+blank because no ONI series is included. Rerun the command whenever the
+calibrated Parquet changes; the CSV is a generated snapshot, not a live link.
+
+The inspected calibrated file contains `h3_index = "N/A"`; its rows support
+regional and biome diagnostics but not per-cell map results. The runner records
+that in `spatial_resolution`. It fills missing years inside each region's
+coverage with zero counts. Confirm that the source has complete monthly
+coverage before interpreting those zeros as no fires.
