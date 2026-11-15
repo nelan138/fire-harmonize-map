@@ -6,10 +6,10 @@
       </div>
       <div>
         <div class="text-sm font-semibold text-white">
-          Chế Độ Thẩm Định: {{ modelValue ? 'Chuyên Gia Viễn Thám & Thống Kê' : 'Dễ Hiểu / Dành Cho Mọi Người' }}
+          Auditing Perspective: {{ modelValue ? 'Remote Sensing Scientists & Applied Statisticians' : 'General Audience & Decision Makers' }}
         </div>
         <div class="text-xs text-slate-400">
-          {{ modelValue ? 'Bao gồm đầy đủ các phương trình KaTeX, kiểm định p-value, và phân tích phần dư.' : 'Trình bày trực quan qua ẩn dụ ống kính máy ảnh, thanh trượt ảnh thật và bảng điểm.' }}
+          {{ modelValue ? 'Full mathematical formulations, thermodynamic proofs, residual distributions, and p-value hypothesis tests.' : 'Visual camera lens analogies, interactive before/after satellite imagery, and high-level verification scorecards.' }}
         </div>
       </div>
     </div>
@@ -23,7 +23,7 @@
         @click="$emit('update:modelValue', false)"
       >
         <UIcon name="i-lucide-eye" class="w-3.5 h-3.5" />
-        <span>Dễ Hiểu (Tổng Quan)</span>
+        <span>General Track</span>
       </button>
 
       <button
@@ -33,7 +33,7 @@
         @click="$emit('update:modelValue', true)"
       >
         <UIcon name="i-lucide-graduation-cap" class="w-3.5 h-3.5" />
-        <span>Chuyên Gia (Deep Science)</span>
+        <span>Scientific Deep Dive</span>
       </button>
     </div>
   </div>
